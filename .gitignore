@@ -29,3 +29,7 @@ docker/volumes/
 
 # Icons cache local
 public/icons/cache/
+
+# IDE settings and scratch logs
+.antigravitycli/
+scratch/

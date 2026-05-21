@@ -19,9 +19,12 @@
     "import:full": "pnpm --filter @albion-tool/scripts run import:full",
     "import:market": "pnpm --filter @albion-tool/scripts run import:market",
     "import:icons": "pnpm --filter @albion-tool/scripts run import:icons",
-    "import:backfill": "pnpm --filter @albion-tool/scripts run import:backfill"
+    "import:backfill": "pnpm --filter @albion-tool/scripts run import:backfill",
+    "changeset": "changeset",
+    "version:bump": "changeset version && pnpm install --no-frozen-lockfile"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@vitest/coverage-v8": "^2.0.0",
     "turbo": "^2.9.14",
     "typescript": "^5.5.0",

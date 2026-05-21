@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import pkg from './package.json'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -93,6 +94,8 @@ export default defineNuxtConfig({
     public: {
       appName: 'Albion Tool',
       appUrl: process.env.APP_URL ?? 'http://localhost:3000',
+      appVersion: pkg.version ?? '0.0.1',
+      appBuild: process.env.APP_BUILD ?? 'dev',
     },
   },
 

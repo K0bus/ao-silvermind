@@ -292,7 +292,7 @@
       <div class="footer-inner">
         <div class="row" style="gap:14px">
           <span class="t-eyebrow">Albion Codex</span>
-          <span class="t-dim" style="font-size:12px">v0.1 · build 1</span>
+          <span class="t-dim" style="font-size:12px">v{{ version }} · build {{ build }}</span>
         </div>
         <div class="row" style="gap:16px">
           <NuxtLink v-if="auth.isAdmin.value" to="/admin" class="t-dim" style="font-size:12px">État système</NuxtLink>
@@ -308,6 +308,9 @@
 const auth = useAuth()
 const route = useRoute()
 const router = useRouter()
+const config = useRuntimeConfig()
+const version = config.public.appVersion
+const build = config.public.appBuild
 
 const { data: topProfitRaw } = useTopProfit()
 const topProfit = computed(() => (topProfitRaw.value ?? [])[0] ?? null)
