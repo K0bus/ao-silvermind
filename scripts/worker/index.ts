@@ -49,7 +49,7 @@ const importWorker = new Worker<ImportJobData, ImportJobResult>(
 const marketWorker = new Worker<MarketJobData, MarketJobResult>(
   MARKET_QUEUE_NAME,
   async (job) => {
-    const { jobId, items, locations, qualities } = job.data
+    const { jobId, items, locations, qualities, skipHistory } = job.data
 
     if (!items || items.length === 0) {
       return { itemsRequested: 0, itemsProcessed: 0, itemsUpdated: 0, itemsFailed: 0, durationMs: 0 }
@@ -62,6 +62,7 @@ const marketWorker = new Worker<MarketJobData, MarketJobResult>(
         locations,
         qualities,
         jobId,
+        skipHistory,
         onProgress: async (progress: MarketJobProgress) => {
           await job.updateProgress(progress)
         }
@@ -137,7 +138,7 @@ const schedulerWorker = new Worker(
       await getImportQueue().add(`import-${dbJob.id}`, { jobId: dbJob.id, type })
     } 
     else if (target === 'albion-market') {
-      await runMarketSync()
+      await runMarketSync(options)
     }
 
     // Update last run in DB

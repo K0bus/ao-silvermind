@@ -19,7 +19,15 @@ export default defineEventHandler(async (event) => {
       label: 'Market Price Sync',
       cron: '0 * * * *',
       target: 'albion-market',
-      options: {},
+      options: { skipHistory: true },
+      enabled: true
+    },
+    {
+      name: 'albion-market-history-sync',
+      label: 'Market History Sync',
+      cron: '0 4 * * *',
+      target: 'albion-market',
+      options: { skipHistory: false },
       enabled: true
     },
     {
@@ -36,7 +44,13 @@ export default defineEventHandler(async (event) => {
   for (const s of defaultSchedules) {
     const schedule = await prisma.jobSchedule.upsert({
       where: { name: s.name },
-      update: {},
+      update: {
+        label: s.label,
+        cron: s.cron,
+        target: s.target,
+        options: s.options,
+        enabled: s.enabled
+      },
       create: s
     })
     await schedulerService.upsertSchedule(schedule.name)

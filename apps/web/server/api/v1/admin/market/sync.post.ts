@@ -6,6 +6,7 @@ import { marketPriceService } from '@albion-tool/market-engine'
 
 const schema = z.object({
   type: z.enum(['FULL', 'PRIORITY', 'BATCH']).default('FULL'),
+  skipHistory: z.boolean().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -29,7 +30,8 @@ export default defineEventHandler(async (event) => {
 
   // Plan the sync
   const { jobId, chunks, totalItems } = await marketPriceService.planFullSync({
-    triggeredById: admin.id
+    triggeredById: admin.id,
+    skipHistory: body.data.skipHistory,
   })
 
   // Start the job in DB — use updateMany to avoid race condition with a duplicate request
@@ -55,6 +57,7 @@ export default defineEventHandler(async (event) => {
       jobId,
       type: body.data.type,
       items,
+      skipHistory: body.data.skipHistory,
     },
     opts: {
       jobId: `market-${jobId}-${index}`,

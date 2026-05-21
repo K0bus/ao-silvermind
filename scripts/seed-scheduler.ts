@@ -16,7 +16,15 @@ async function seed() {
       label: 'Market Price Sync',
       cron: '0 * * * *', // Every hour
       target: 'albion-market',
-      options: {},
+      options: { skipHistory: true },
+      enabled: true
+    },
+    {
+      name: 'albion-market-history-sync',
+      label: 'Market History Sync',
+      cron: '0 4 * * *', // Every day at 4 AM
+      target: 'albion-market',
+      options: { skipHistory: false },
       enabled: true
     }
   ]
@@ -24,7 +32,12 @@ async function seed() {
   for (const s of schedules) {
     await prisma.jobSchedule.upsert({
       where: { name: s.name },
-      update: {},
+      update: {
+        label: s.label,
+        cron: s.cron,
+        target: s.target,
+        options: s.options,
+      },
       create: s
     })
     console.log(`Seeded schedule: ${s.name}`)

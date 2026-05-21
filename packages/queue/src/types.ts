@@ -47,6 +47,7 @@ export interface MarketJobData {
   locations?: string[]
   qualities?: number[]
   triggeredById?: string
+  skipHistory?: boolean
 }
 
 export interface MarketJobResult {

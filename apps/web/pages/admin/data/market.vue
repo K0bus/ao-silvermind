@@ -5,9 +5,20 @@
         <h1 class="page-title">Market Sync Jobs</h1>
         <p class="page-subtitle">Real-time price synchronization history</p>
       </div>
-      <button class="btn-primary text-sm" :disabled="triggering || !!activeJobId" @click="triggerMarketSync">
-        {{ triggering ? 'Queuing...' : activeJobId ? 'Sync running...' : 'Run Market Sync' }}
-      </button>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            v-model="skipHistory"
+            :disabled="triggering || !!activeJobId"
+            class="rounded border-surface-700 bg-surface-800 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900 w-4 h-4"
+          />
+          <span>Skip History (Fast Sync)</span>
+        </label>
+        <button class="btn-primary text-sm" :disabled="triggering || !!activeJobId" @click="triggerMarketSync">
+          {{ triggering ? 'Queuing...' : activeJobId ? 'Sync running...' : 'Run Market Sync' }}
+        </button>
+      </div>
     </div>
 
     <!-- Progress indicator -->
@@ -195,6 +206,7 @@ interface MarketSyncJob {
 const jobs = ref<MarketSyncJob[]>([])
 const loading = ref(false)
 const triggering = ref(false)
+const skipHistory = ref(true)
 const expandedJobs = ref<Record<string, boolean>>({})
 
 const activeJob = computed(() => jobs.value.find(j => j.status === 'RUNNING' || j.status === 'PENDING'))
@@ -230,7 +242,7 @@ async function triggerMarketSync() {
   try {
     const res = await $fetch<{ data: { jobId: string } }>('/api/v1/admin/market/sync', {
       method: 'POST',
-      body: { type: 'FULL' },
+      body: { type: 'FULL', skipHistory: skipHistory.value },
     })
     await refreshJobs()
   } catch (err: any) {

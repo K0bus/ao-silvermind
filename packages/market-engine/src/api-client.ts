@@ -33,8 +33,8 @@ export interface MarketApiItemRef {
 export class MarketApiClient {
   private readonly baseUrl = 'https://www.albion-online-data.com/api/v2/stats/prices'
   private readonly historyUrl = 'https://www.albion-online-data.com/api/v2/stats/history'
-  private readonly maxBatchSize = 100
-  private readonly maxUrlLength = 1800
+  private readonly maxBatchSize = 1000
+  private readonly maxUrlLength = 3900
   private readonly maxRetries = 5
   private readonly baseRetryDelayMs = 5000
   private readonly maxRetryDelayMs = 65000

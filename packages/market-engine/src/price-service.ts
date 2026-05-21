@@ -9,7 +9,7 @@ import type {
   Prisma as PrismaType,
   PriceConfidence as PriceConfidenceType,
 } from '@albion-tool/database'
-import { marketApiClient, type RawHistoryPrice } from './api-client'
+import { marketApiClient, type RawHistoryPrice, type RawMarketPrice } from './api-client'
 
 export interface MarketSyncItem {
   id: string
@@ -75,9 +75,10 @@ export class MarketPriceService {
     locations?: string[]
     qualities?: number[]
     jobId?: string
+    skipHistory?: boolean
     onProgress?: (progress: MarketSyncProgress) => void | Promise<void>
   }): Promise<{ itemsUpdated: number; itemsFailed: number }> {
-    const { items, locations, qualities, jobId, onProgress } = params
+    const { items, locations, qualities, jobId, skipHistory, onProgress } = params
 
     const apiItems = items.map(item => ({
       id: item.id,
@@ -86,12 +87,22 @@ export class MarketPriceService {
 
     const apiItemIds = apiItems.map(item => item.apiItemId)
 
-    // Call API endpoints concurrently to fetch live prices, daily history (24h), and hourly history (1h)
-    const [pricesResult, history24Result, history1Result] = await Promise.allSettled([
+    // Call API endpoints concurrently to fetch live prices, and optionally daily history (24h), and hourly history (1h)
+    const promises: [
+      Promise<RawMarketPrice[]>,
+      Promise<RawHistoryPrice[]>,
+      Promise<RawHistoryPrice[]>,
+    ] = [
       marketApiClient.getPrices(apiItemIds, locations, qualities),
-      marketApiClient.getHistory(apiItemIds, locations, qualities, 24),
-      marketApiClient.getHistory(apiItemIds, locations, qualities, 1),
-    ])
+      skipHistory
+        ? Promise.resolve([])
+        : marketApiClient.getHistory(apiItemIds, locations, qualities, 24),
+      skipHistory
+        ? Promise.resolve([])
+        : marketApiClient.getHistory(apiItemIds, locations, qualities, 1),
+    ]
+
+    const [pricesResult, history24Result, history1Result] = await Promise.allSettled(promises)
 
     const rawPrices = pricesResult.status === 'fulfilled' ? pricesResult.value : []
     const rawHistory24 = history24Result.status === 'fulfilled' ? history24Result.value : []
@@ -971,7 +982,7 @@ export class MarketPriceService {
    * Plans synchronization for all items.
    * Returns chunks of {id, uniqueName, enchantmentLevel} for correct API + DB usage.
    */
-  async planFullSync(options: { triggeredById?: string } = {}) {
+  async planFullSync(options: { triggeredById?: string; skipHistory?: boolean } = {}) {
     const job = await prisma.marketSyncJob.create({
       data: {
         type: 'FULL',

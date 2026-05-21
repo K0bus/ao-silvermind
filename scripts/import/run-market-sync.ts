@@ -6,7 +6,7 @@ import { marketPriceService } from '@albion-tool/market-engine'
  * Triggers a full market synchronization.
  * This is the entry point for scheduled syncs or manual triggers.
  */
-export async function runMarketSync(options: { triggeredById?: string } = {}) {
+export async function runMarketSync(options: { triggeredById?: string; skipHistory?: boolean } = {}) {
   console.log('[market-sync] Starting full market synchronization...')
   const start = Date.now()
 
@@ -34,6 +34,7 @@ export async function runMarketSync(options: { triggeredById?: string } = {}) {
       jobId,
       type: 'FULL' as const,
       items,
+      skipHistory: options.skipHistory,
     },
     opts: {
       jobId: `market-${jobId}-${index}`,
