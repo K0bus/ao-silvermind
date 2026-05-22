@@ -1,6 +1,6 @@
 # Setup & Deployment Guide
 
-This document covers the steps required to get Albion Tool running in your local development environment or production server.
+This document covers the steps required to get Albion SilverMind running in your local development environment or production server.
 
 ## Prerequisites
 

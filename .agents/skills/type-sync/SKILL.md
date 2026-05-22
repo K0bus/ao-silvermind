@@ -5,7 +5,7 @@ description: "Valider la conformité des types TypeScript dans le monorepo ou sy
 
 # Skill: Synchronisation & Validation TypeScript dans le Monorepo
 
-Ce Skill guide l'agent sur la marche à suivre pour s'assurer de l'exactitude de la chaîne de types TypeScript à travers tout le projet **Albion Tool**.
+Ce Skill guide l'agent sur la marche à suivre pour s'assurer de l'exactitude de la chaîne de types TypeScript à travers tout le projet **Albion SilverMind**.
 
 ## Contexte & Emplacements
 - **Contrats partagés** : `packages/types/`

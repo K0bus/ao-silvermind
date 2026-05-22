@@ -92,7 +92,7 @@ export default defineNuxtConfig({
     redisPort: Number(process.env.REDIS_PORT ?? 6379),
     redisPassword: process.env.REDIS_PASSWORD ?? '',
     public: {
-      appName: 'Albion Tool',
+      appName: 'Albion SilverMind',
       appUrl: process.env.APP_URL ?? 'http://localhost:3000',
       appVersion: pkg.version ?? '0.0.1',
       appBuild: process.env.APP_BUILD ?? 'dev',
@@ -124,7 +124,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Albion Tool',
+      title: 'Albion - SilverMind',
       htmlAttrs: { lang: 'en', class: 'dark' },
       meta: [
         { charset: 'utf-8' },

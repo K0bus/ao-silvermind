@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
-useHead({ title: 'Killboard — Albion Tool' })
+useHead({ title: 'Killboard — Albion SilverMind' })
 
 const { events, pending, error, hasMore, loadMore } = usePvpEvents()
 </script>

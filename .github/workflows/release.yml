@@ -89,8 +89,8 @@ jobs:
           file: docker/app/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/albion-tool-app:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/albion-tool-app:${{ env.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/albion-silvermind-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/albion-silvermind-app:${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -101,7 +101,7 @@ jobs:
           file: docker/worker/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/albion-tool-worker:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/albion-tool-worker:${{ env.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/albion-silvermind-worker:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/albion-silvermind-worker:${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

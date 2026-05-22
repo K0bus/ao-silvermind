@@ -1,11 +1,11 @@
 ---
 name: db-migration
-description: "Modifier le schéma de base de données, créer une migration Prisma ou mettre à jour un modèle dans schema.prisma du projet Albion Tool"
+description: "Modifier le schéma de base de données, créer une migration Prisma ou mettre à jour un modèle dans schema.prisma du projet Albion SilverMind"
 ---
 
 # Skill: Gestion du Schéma et des Migrations de Base de Données
 
-Ce Skill fournit des instructions spécifiques sur la manière de modifier le schéma de base de données PostgreSQL à l'aide de Prisma ORM dans le cadre du monorepo **Albion Tool**.
+Ce Skill fournit des instructions spécifiques sur la manière de modifier le schéma de base de données PostgreSQL à l'aide de Prisma ORM dans le cadre du monorepo **Albion SilverMind**.
 
 ## Contexte & Emplacements
 - **Fichier de Schéma** : `packages/database/prisma/schema.prisma`

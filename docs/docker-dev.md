@@ -1,6 +1,6 @@
 # Docker Development Environment Guide
 
-Welcome to the Albion Tool Docker development guide! This document explains how to spin up a fully self-contained local development environment using Docker Compose.
+Welcome to the Albion SilverMind Docker development guide! This document explains how to spin up a fully self-contained local development environment using Docker Compose.
 
 The development environment includes:
 - **Nuxt Web Application** (`app`): A fast development server running with automatic Prisma client generation, database migration application, and seeding on startup.

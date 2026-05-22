@@ -80,7 +80,7 @@ const { data, status } = useFetch(() => `/api/v1/pvp/alliances/${id.value}`, {
 })
 
 useHead(() => ({
-  title: data.value ? `${data.value.AllianceName} — Albion Tool` : 'Alliance — Albion Tool',
+  title: data.value ? `${data.value.AllianceName} — Albion SilverMind` : 'Alliance — Albion SilverMind',
 }))
 </script>
 

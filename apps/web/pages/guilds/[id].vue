@@ -291,7 +291,7 @@ const sortedMembers = computed(() => {
 })
 
 useHead(() => ({
-  title: guild.data.value ? `${guild.data.value.Name} — Albion Tool` : 'Guilde — Albion Tool',
+  title: guild.data.value ? `${guild.data.value.Name} — Albion SilverMind` : 'Guilde — Albion SilverMind',
 }))
 </script>
 

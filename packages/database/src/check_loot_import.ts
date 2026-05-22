@@ -11,7 +11,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 async function main() {
-  console.log('=== Albion Tool — Loot Table Import Verification ===\n')
+  console.log('=== Albion SilverMind — Loot Table Import Verification ===\n')
 
   const totalTables = await prisma.lootTable.count()
   const totalItems = await prisma.lootTableItem.count()

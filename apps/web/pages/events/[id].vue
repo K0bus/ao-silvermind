@@ -187,7 +187,7 @@ const event = computed(() => data.value?.event ?? null)
 const itemNamesMap = computed(() => data.value?.names ?? {})
 
 useHead(() => ({
-  title: event.value ? `Kill #${event.value.EventId} — Albion Tool` : 'Kill Event — Albion Tool',
+  title: event.value ? `Kill #${event.value.EventId} — Albion SilverMind` : 'Kill Event — Albion SilverMind',
 }))
 
 const QUALITY_LABELS = ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece']

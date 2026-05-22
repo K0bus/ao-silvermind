@@ -1,6 +1,6 @@
-# Règles d'Architecture et Guide de Style - Albion Tool
+# Règles d'Architecture et Guide de Style - Albion SilverMind
 
-Ce document régit les garde-fous passifs et contraintes d'architecture pour le projet **Albion Tool**. Tout agent intervenant sur ce projet doit s'y conformer rigoureusement.
+Ce document régit les garde-fous passifs et contraintes d'architecture pour le projet **Albion SilverMind**. Tout agent intervenant sur ce projet doit s'y conformer rigoureusement.
 
 ---
 

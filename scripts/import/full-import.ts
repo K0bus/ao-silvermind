@@ -2,7 +2,7 @@ import { prisma } from '@albion-tool/database'
 import { runImport } from './run-import.js'
 
 async function main() {
-  console.log('=== Albion Tool — Full Import ===')
+  console.log('=== Albion SilverMind — Full Import ===')
 
   const job = await prisma.importJob.create({
     data: {

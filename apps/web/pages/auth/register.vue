@@ -2,7 +2,7 @@
   <div>
     <div class="mb-6">
       <h1 class="text-xl font-bold text-white">Create account</h1>
-      <p class="text-sm text-gray-400 mt-1">Join Albion Tool</p>
+      <p class="text-sm text-gray-400 mt-1">Join Albion SilverMind</p>
     </div>
 
     <form class="space-y-4" @submit.prevent="handleSubmit">

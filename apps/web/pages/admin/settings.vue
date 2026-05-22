@@ -78,7 +78,7 @@
                 v-model="settings.public_app_url" 
                 type="text" 
                 class="input font-mono text-xs" 
-                placeholder="https://albion-tool.com" 
+                placeholder="https://albion-silvermind.com" 
               />
               <p class="mt-1 text-[10px] text-gray-500">
                 Used to generate absolute links in notifications.

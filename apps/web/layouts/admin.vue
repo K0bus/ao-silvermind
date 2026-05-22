@@ -8,7 +8,7 @@
           <div class="w-6 h-6 rounded bg-primary-600 flex items-center justify-center">
             <span class="text-xs font-black text-white">AO</span>
           </div>
-          <span class="text-sm font-bold text-white">Albion Tool</span>
+          <span class="text-sm font-bold text-white">Albion SilverMind</span>
         </NuxtLink>
         <span class="ml-auto text-xs text-primary-500 font-semibold">ADMIN</span>
       </div>

@@ -1,6 +1,6 @@
 # Project Architecture
 
-Albion Tool is built as a high-performance, modular monorepo designed to handle large volumes of game data and real-time market updates.
+Albion SilverMind is built as a high-performance, modular monorepo designed to handle large volumes of game data and real-time market updates.
 
 ## Monorepo Overview
 

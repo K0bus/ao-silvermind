@@ -1,8 +1,8 @@
 <div align="center">
 
-![Albion Tool Banner](file:///home/k0bus/.gemini/antigravity/brain/60aef483-8fe9-4ec7-8081-57b7f005b8f2/albion_tool_banner_1778864662337.png)
+![Albion SilverMind Banner](file:///home/k0bus/.gemini/antigravity/brain/60aef483-8fe9-4ec7-8081-57b7f005b8f2/albion_tool_banner_1778864662337.png)
 
-# Albion Tool
+# Albion SilverMind
 ### Advanced Data Platform for Albion Online Economy
 
 [![Node.js](https://img.shields.io/badge/Node.js-22+-68a063?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
@@ -13,7 +13,7 @@
 
 ---
 
-**Albion Tool** is a professional-grade data platform dedicated to the Albion Online economy. Designed for serious players, crafters, and market analysts, it provides deep insights into item profitability, crafting chains, and live market fluctuations.
+**Albion SilverMind** is a professional-grade data platform dedicated to the Albion Online economy. Designed for serious players, crafters, and market analysts, it provides deep insights into item profitability, crafting chains, and live market fluctuations.
 
 [Explore Architecture](file:///home/k0bus/projects/albion-tool/docs/architecture.md) • [Setup Guide](file:///home/k0bus/projects/albion-tool/docs/setup.md) • [Development](file:///home/k0bus/projects/albion-tool/docs/development.md)
 

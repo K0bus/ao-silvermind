@@ -10,7 +10,7 @@
           <div class="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center shadow-glow">
             <span class="text-sm font-black text-white">AO</span>
           </div>
-          <span class="text-xl font-bold text-white">Albion Tool</span>
+          <span class="text-xl font-bold text-white">Albion SilverMind</span>
         </NuxtLink>
       </div>
 

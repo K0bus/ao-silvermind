@@ -175,7 +175,7 @@ const { data, status } = usePvpPlayer(id)
 const activeTab = ref<'kills' | 'deaths'>('kills')
 
 useHead(() => ({
-  title: data.value ? `${data.value.Name} — Albion Tool` : 'Joueur — Albion Tool',
+  title: data.value ? `${data.value.Name} — Albion SilverMind` : 'Joueur — Albion SilverMind',
 }))
 
 const SLOT_LABELS: Record<keyof KillEventEquipment, string> = {

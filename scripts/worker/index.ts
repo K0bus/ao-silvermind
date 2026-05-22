@@ -295,7 +295,7 @@ async function checkAndCompleteMarketSyncJob(jobId: string) {
 
             await sendDiscordNotification({
               title: `💎 Opportunity of the Moment: ${highlight.name}`,
-              description: `An exceptional opportunity was detected in **${highlight.city}**!${itemUrl ? `\n\n[🔗 View Item on Albion Tool](${itemUrl})` : ''}`,
+              description: `An exceptional opportunity was detected in **${highlight.city}**!${itemUrl ? `\n\n[🔗 View Item on Albion SilverMind](${itemUrl})` : ''}`,
               url: itemUrl,
               color: 0xf59e0b, // Gold/Amber
               image: highlight.iconUrl ? { url: highlight.iconUrl } : undefined,
