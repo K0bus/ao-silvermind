@@ -126,6 +126,8 @@
             <select v-model="form.target" class="input">
               <option value="albion-import">Albion Import</option>
               <option value="albion-market">Albion Market</option>
+              <option value="pvp-sync">PvP Sync</option>
+              <option value="pvp-historical-sync">PvP Historical Sync</option>
             </select>
           </div>
 

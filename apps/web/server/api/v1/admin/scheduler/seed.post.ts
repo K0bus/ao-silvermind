@@ -37,6 +37,22 @@ export default defineEventHandler(async (event) => {
       target: 'albion-import',
       options: { type: 'PARTIAL_ITEMS' },
       enabled: false
+    },
+    {
+      name: 'albion-pvp-sync',
+      label: 'PvP Combat Events Sync',
+      cron: '*/5 * * * *',
+      target: 'pvp-sync',
+      options: {},
+      enabled: true
+    },
+    {
+      name: 'albion-pvp-historical-sync',
+      label: 'PvP Combat Events Historical Aggregator',
+      cron: '0 2 * * *',
+      target: 'pvp-historical-sync',
+      options: {},
+      enabled: true
     }
   ]
 
