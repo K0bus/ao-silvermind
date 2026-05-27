@@ -140,6 +140,58 @@ const schedulerWorker = new Worker(
     else if (target === 'albion-market') {
       await runMarketSync(options)
     }
+    else if (target === 'pvp-sync') {
+      console.log('[scheduler-worker] Syncing global PvP events...')
+      try {
+        const response = await fetch('https://gameinfo-ams.albiononline.com/api/gameinfo/events?limit=50&offset=0')
+        if (response.ok) {
+          const events = await response.json() as any[]
+          const { saveKillEvents } = await import('@albion-tool/database')
+          await saveKillEvents(events)
+          console.log(`[scheduler-worker] Successfully synced ${events.length} PvP events.`)
+        } else {
+          console.error(`[scheduler-worker] Failed to fetch PvP events: status ${response.status}`)
+        }
+      } catch (err) {
+        console.error('[scheduler-worker] Error during PvP events sync:', err)
+      }
+    }
+    else if (target === 'pvp-historical-sync') {
+      console.log('[scheduler-worker] Starting PvP historical events aggregation...')
+      const limit = 50
+      let successfullySaved = 0
+      
+      // Fetch 20 pages of combats going back in history (1000 combats total)
+      for (let page = 0; page < 20; page++) {
+        const offset = page * limit
+        console.log(`[scheduler-worker] Fetching PvP events offset=${offset}...`)
+        try {
+          const response = await fetch(`https://gameinfo-ams.albiononline.com/api/gameinfo/events?limit=${limit}&offset=${offset}`)
+          if (response.ok) {
+            const events = await response.json() as any[]
+            if (events && events.length > 0) {
+              const { saveKillEvents } = await import('@albion-tool/database')
+              await saveKillEvents(events)
+              successfullySaved += events.length
+              console.log(`[scheduler-worker] Page ${page} synced: ${events.length} events processed.`)
+              
+              // Small delay to be polite to the official Albion API
+              await new Promise(resolve => setTimeout(resolve, 500))
+            } else {
+              console.log(`[scheduler-worker] Page ${page} returned 0 events. Stopping historical sync.`)
+              break
+            }
+          } else {
+            console.error(`[scheduler-worker] Page ${page} failed: status ${response.status}`)
+            break
+          }
+        } catch (err) {
+          console.error(`[scheduler-worker] Page ${page} threw error:`, err)
+          break
+        }
+      }
+      console.log(`[scheduler-worker] PvP historical sync complete. Processed ${successfullySaved} events.`)
+    }
 
     // Update last run in DB
     await prisma.jobSchedule.updateMany({

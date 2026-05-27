@@ -1073,3 +1073,45 @@ model LootTableItem {
   @@index([referencedLootTableId])
 }
 
+// ══════════════════════════════════════════════════════════════
+// PVP KILLS (COMBAT DATA)
+// ══════════════════════════════════════════════════════════════
+
+model PvpKill {
+  id                   String   @id @default(cuid())
+  eventId              Int      @unique
+  timestamp            DateTime
+  location             String?
+  totalVictimKillFame  Int
+  groupMemberCount     Int      @default(1)
+  numberOfParticipants Int      @default(1)
+  gameplayType         String   @default("SOLO") // "SOLO" | "DUO" | "TRIO" | "SMALL_SCALE" | "ZERG"
+  
+  // Killer
+  killerId             String
+  killerName           String
+  killerGuildName      String?
+  killerAllianceName   String?
+  killerIp             Float    @default(0)
+  killerWeapon         String?  // MainHand item unique name (e.g. "T8_2H_POLEHAMMER@1")
+  killerWeaponFamily   String?  // Resolved weapon family (e.g. "quarterstaff")
+  killerEquipment      Json?    // Full equipment JSON { MainHand, OffHand, Head, Armor, Shoes, Cape, Potion, Food, Mount }
+  
+  // Victim
+  victimId             String
+  victimName           String
+  victimGuildName      String?
+  victimAllianceName   String?
+  victimIp             Float    @default(0)
+  victimWeapon         String?  
+  victimEquipment      Json?    
+  
+  createdAt            DateTime @default(now())
+  
+  @@index([killerWeapon])
+  @@index([killerWeaponFamily])
+  @@index([gameplayType])
+  @@index([timestamp])
+}
+
+

@@ -21,7 +21,8 @@ function prismaClientHasExpectedDelegates(client: PrismaClientInstance): boolean
   return typeof c.build?.findUnique === 'function' && 
          typeof c.craftingStation?.findUnique === 'function' &&
          typeof c.item?.findUnique === 'function' &&
-         typeof c.lootTable?.findUnique === 'function'
+         typeof c.lootTable?.findUnique === 'function' &&
+         typeof c.pvpKill?.findUnique === 'function'
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClientInstance }
@@ -59,3 +60,4 @@ export {
   DEFAULT_SYSTEM_CONFIGS,
   ensureBootstrapData,
 } from './bootstrap-data'
+export { saveKillEvents } from './pvp'

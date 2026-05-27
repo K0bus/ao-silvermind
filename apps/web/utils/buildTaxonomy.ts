@@ -52,7 +52,7 @@ const WEAPON_FAMILY_LABELS: Record<string, string> = {
   axe: 'Haches',
   bow: 'Arcs',
   crossbow: 'Arbalètes',
-  cursedstaff: 'Bâtons maudits',
+  cursestaff: 'Bâtons maudits', // Match database "cursestaff"
   dagger: 'Dagues',
   demonicstaff: 'Bâtons démoniaques',
   firestaff: 'Bâtons de feu',
@@ -65,7 +65,7 @@ const WEAPON_FAMILY_LABELS: Record<string, string> = {
   shapeshifterstaff: 'Bâtons métamorphes',
   spear: 'Lances',
   sword: 'Épées',
-  arcane: 'Arcane',
+  arcanestaff: 'Bâtons arcaniques', // Match database "arcanestaff"
 }
 
 const OFFHAND_FAMILY_LABELS: Record<string, string> = {

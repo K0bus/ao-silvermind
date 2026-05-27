@@ -26,6 +26,22 @@ async function seed() {
       target: 'albion-market',
       options: { skipHistory: false },
       enabled: true
+    },
+    {
+      name: 'albion-pvp-sync',
+      label: 'PvP Combat Events Sync',
+      cron: '*/5 * * * *', // Every 5 minutes
+      target: 'pvp-sync',
+      options: {},
+      enabled: true
+    },
+    {
+      name: 'albion-pvp-historical-sync',
+      label: 'PvP Combat Events Historical Aggregator',
+      cron: '0 2 * * *', // Every day at 2 AM
+      target: 'pvp-historical-sync',
+      options: {},
+      enabled: true
     }
   ]
 

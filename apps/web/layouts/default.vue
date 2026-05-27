@@ -198,6 +198,14 @@
             <h4>Parcourir</h4>
             <ul>
               <li><NuxtLink to="/builds">Tous les builds publics</NuxtLink></li>
+              <li>
+                <NuxtLink to="/builds/pvp-stats">
+                  <span style="display:inline-flex;align-items:center;gap:6px">
+                    Conseils & Stats PvP
+                    <span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(201,161,74,0.15);color:var(--gold);font-weight:700;line-height:1">Nouveau</span>
+                  </span>
+                </NuxtLink>
+              </li>
               <li><NuxtLink to="/builds?gameMode=Solo+PvP">Solo PvP</NuxtLink></li>
               <li><NuxtLink to="/builds?gameMode=ZvZ">ZvZ</NuxtLink></li>
               <li><NuxtLink to="/builds?gameMode=Ganking">Ganking</NuxtLink></li>

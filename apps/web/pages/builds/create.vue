@@ -388,6 +388,37 @@ watch(editCode, async (code) => {
   }
 }, { immediate: true })
 
+onMounted(async () => {
+  if (editCode.value) return
+
+  const slotsToLoad = ['weapon', 'offhand', 'helmet', 'armor', 'shoes', 'cape', 'bag', 'food', 'potion', 'mount'] as const
+  for (const slot of slotsToLoad) {
+    const itemQuery = route.query[slot]
+    if (typeof itemQuery === 'string' && itemQuery.trim().length > 0) {
+      try {
+        const itemRes = await $fetch<{ data: any }>(`/api/v1/items/${itemQuery}`)
+        const item = itemRes.data
+        if (item) {
+          await creator.setItem(slot, {
+            uniqueName: item.uniqueName,
+            name: item.name,
+            tier: item.tier,
+            enchantmentLevel: item.enchantmentLevel,
+            itemPower: typeof item.itemPower === 'number' ? item.itemPower : null,
+            twoHanded: Boolean(item.twoHanded),
+            iconUrl: item.iconUrl,
+            itemType: item.itemType,
+            shopCategory: item.shopCategory,
+            shopSubcategory: item.shopSubcategory,
+          })
+        }
+      } catch (err) {
+        console.error(`[BuildCreator] Failed to pre-populate ${slot} with ${itemQuery}:`, err)
+      }
+    }
+  }
+})
+
 function copyGuestLink() {
   const url = creator.buildGuestUrl()
   navigator.clipboard.writeText(url)
@@ -405,7 +436,7 @@ function showCopied(msg: string) {
   setTimeout(() => { copiedMsg.value = null }, 3000)
 }
 
-useSeoMeta({ title: 'Build Creator — Albion Codex' })
+useSeoMeta({ title: 'Build Creator — Albion - SilverMind' })
 </script>
 
 <style scoped>

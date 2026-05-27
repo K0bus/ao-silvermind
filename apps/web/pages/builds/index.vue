@@ -3,14 +3,30 @@
     <div class="page-header">
       <div>
         <div class="crumbs">
-          <NuxtLink to="/">Accueil</NuxtLink><span class="sep">/</span>Builds
+          <NuxtLink to="/">Accueil</NuxtLink>
+          <span class="sep">/</span>
+          <span>Builds</span>
         </div>
         <h1>Builds publics</h1>
-        <p class="t-muted" style="margin-top:6px">Découvrez les setups de la communauté</p>
+        <p class="t-muted" style="margin-top:6px">
+          Découvrez les setups de la communauté et les statistiques PvP de combat
+        </p>
       </div>
       <NuxtLink to="/builds/create" class="ds-btn primary">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         Créer un build
+      </NuxtLink>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="build-tabs">
+      <NuxtLink to="/builds" class="tab-link active">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+        Builds Publics
+      </NuxtLink>
+      <NuxtLink to="/builds/pvp-stats" class="tab-link">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Conseils & Stats PvP
       </NuxtLink>
     </div>
 
@@ -283,5 +299,47 @@ useSeoMeta({ title: 'Builds — Albion Codex' })
   justify-content: center;
   color: var(--text-3);
   margin-bottom: 8px;
+}
+
+.build-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-divider);
+  padding-bottom: 8px;
+}
+
+.tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: all 0.15s;
+}
+
+.tab-link svg {
+  opacity: 0.6;
+}
+
+.tab-link:hover {
+  color: var(--text-1);
+  background: var(--bg-3);
+}
+
+.tab-link.active {
+  color: var(--gold);
+  background: rgba(201, 161, 74, 0.08);
+  font-weight: 600;
+  border: 1px solid rgba(201, 161, 74, 0.18);
+}
+
+.tab-link.active svg {
+  color: var(--gold);
+  opacity: 1;
 }
 </style>
