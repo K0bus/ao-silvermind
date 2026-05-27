@@ -26,6 +26,10 @@ CMD ["sh", "/app/docker/app/dev-entrypoint.sh"]
 
 # ── Builder ───────────────────────────────────────────────────
 FROM deps AS builder
+ARG APP_VERSION
+ARG APP_BUILD
+ENV NUXT_PUBLIC_APP_VERSION=${APP_VERSION}
+ENV NUXT_PUBLIC_APP_BUILD=${APP_BUILD}
 COPY . .
 RUN pnpm --filter @albion-tool/database db:generate
 RUN pnpm --filter web build

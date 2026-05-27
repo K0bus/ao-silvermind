@@ -94,8 +94,8 @@ export default defineNuxtConfig({
     public: {
       appName: 'Albion SilverMind',
       appUrl: process.env.APP_URL ?? 'http://localhost:3000',
-      appVersion: pkg.version ?? '0.0.1',
-      appBuild: process.env.APP_BUILD ?? 'dev',
+      appVersion: process.env.NUXT_PUBLIC_APP_VERSION || pkg.version || '0.0.1',
+      appBuild: process.env.NUXT_PUBLIC_APP_BUILD || process.env.APP_BUILD || 'dev',
     },
   },
 

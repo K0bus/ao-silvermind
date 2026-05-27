@@ -68,6 +68,7 @@ jobs:
           TAG=${{ github.ref }}
           VERSION=${TAG#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
           echo "Building version: $VERSION"
 
       - name: Set up QEMU
@@ -88,6 +89,9 @@ jobs:
           context: .
           file: docker/app/Dockerfile
           push: true
+          build-args: |
+            APP_VERSION=${{ env.VERSION }}
+            APP_BUILD=${{ env.SHORT_SHA }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/albion-silvermind-app:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/albion-silvermind-app:${{ env.VERSION }}
