@@ -1,5 +1,6 @@
 import { prisma } from '~/server/utils/prisma'
 import { requireAuth } from '~/server/utils/guards'
+import { islandEngine } from '@albion-tool/market-engine'
 
 export default defineEventHandler(async (event) => {
   const user = requireAuth(event)
@@ -13,5 +14,13 @@ export default defineEventHandler(async (event) => {
     orderBy: { createdAt: 'desc' }
   })
   
-  return { data: islands }
+  const enrichedIslands = await Promise.all(islands.map(async (island) => {
+    const profitability = await islandEngine.calculateIslandProfitability(island.id)
+    return {
+      ...island,
+      profitability
+    }
+  }))
+  
+  return { data: enrichedIslands }
 })

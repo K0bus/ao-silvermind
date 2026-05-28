@@ -4,7 +4,8 @@ import { z } from 'zod'
 
 const buildingSchema = z.object({
   buildingId: z.string(), // FK to CraftingStation
-  level: z.number().int().min(1).max(8).optional()
+  level: z.number().int().min(1).max(8).optional(),
+  slotIndex: z.number().int().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -32,7 +33,8 @@ export default defineEventHandler(async (event) => {
     data: {
       islandId,
       buildingId: result.data.buildingId,
-      level: result.data.level ?? 1
+      level: result.data.level ?? 1,
+      slotIndex: result.data.slotIndex
     }
   })
 

@@ -970,6 +970,7 @@ model Island {
   type       IslandType @default(PERSONAL)
   locationId String
   level      Int        @default(1)
+  isPremium  Boolean    @default(true)
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   location Location @relation(fields: [locationId], references: [id])
@@ -986,6 +987,7 @@ model IslandBuilding {
   id           String    @id @default(cuid())
   islandId     String
   level        Int       @default(1)
+  slotIndex    Int?
   
   nutrition    Float?    // For crafting/refining buildings (0-100)
   metadata     Json?     // Specific data (happiness, furniture, etc.)
