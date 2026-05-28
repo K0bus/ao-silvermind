@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "isPremium" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "premiumExpiresAt" TIMESTAMP(3);
+
+-- CreateIndex
+CREATE INDEX "User_isPremium_idx" ON "User"("isPremium");

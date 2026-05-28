@@ -95,6 +95,38 @@
           </div>
         </div>
 
+        <!-- Premium Status -->
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
+            <span>★</span> Premium Membership
+          </h2>
+          <div class="space-y-4">
+            <label class="flex items-center gap-2.5 p-2 rounded cursor-pointer hover:bg-surface-800 transition-colors">
+              <input v-model="form.isPremium" type="checkbox" class="text-primary-500 rounded border-gray-600 focus:ring-primary-500 bg-surface-800" />
+              <span class="text-sm text-gray-200 font-medium">Premium Grade Active</span>
+            </label>
+
+            <div v-if="form.isPremium" class="space-y-3 pt-3 border-t border-surface-800">
+              <label class="flex items-center gap-2.5 p-2 rounded cursor-pointer hover:bg-surface-800 transition-colors">
+                <input v-model="form.hasExpiration" type="checkbox" class="text-primary-500 rounded border-gray-600 focus:ring-primary-500 bg-surface-800" />
+                <span class="text-sm text-gray-200">Limited Duration</span>
+              </label>
+
+              <div v-if="form.hasExpiration" class="space-y-1">
+                <span class="text-xs text-gray-500">Expiration Date</span>
+                <input
+                  v-model="form.premiumExpiresAt"
+                  type="datetime-local"
+                  class="input w-full text-sm bg-surface-800 text-white border-gray-700 focus:border-amber-500"
+                />
+              </div>
+              <div v-else class="text-xs text-green-400/80 bg-green-400/5 rounded px-2.5 py-1.5 border border-green-500/10">
+                Premium grade is permanent (no expiration).
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Save -->
         <div class="space-y-2">
           <button
@@ -149,27 +181,65 @@ interface UserDetail {
   lastLoginIp: string | null
   createdAt: string
   updatedAt: string
+  isPremium: boolean
+  premiumExpiresAt: string | null
   _count: { sessions: number; importJobs: number }
 }
 
-const { data, pending } = await useFetch<{ data: UserDetail }>(`/api/v1/admin/users/${userId}`)
+const { data, pending, refresh } = await useFetch<{ data: UserDetail }>(`/api/v1/admin/users/${userId}`)
 const user = computed(() => data.value?.data ?? null)
 
-const form = reactive({ role: '', status: '' })
+const form = reactive({
+  role: '',
+  status: '',
+  isPremium: false,
+  hasExpiration: false,
+  premiumExpiresAt: ''
+})
 const saving = ref(false)
 const saved = ref(false)
 const saveError = ref<string | null>(null)
+
+function toLocalDatetimeString(dateInput: Date | string) {
+  const d = new Date(dateInput)
+  const tzOffset = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16)
+}
 
 watch(user, (v) => {
   if (v) {
     form.role = v.role
     form.status = v.status
+    form.isPremium = v.isPremium
+    form.hasExpiration = !!v.premiumExpiresAt
+    form.premiumExpiresAt = v.premiumExpiresAt
+      ? toLocalDatetimeString(v.premiumExpiresAt)
+      : ''
   }
 }, { immediate: true })
 
-const isDirty = computed(() =>
-  user.value && (form.role !== user.value.role || form.status !== user.value.status)
-)
+watch(() => form.hasExpiration, (newVal) => {
+  if (newVal && !form.premiumExpiresAt) {
+    const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    form.premiumExpiresAt = toLocalDatetimeString(thirtyDaysLater)
+  }
+})
+
+const isDirty = computed(() => {
+  if (!user.value) return false
+  
+  const dbExpiresAt = user.value.premiumExpiresAt
+    ? toLocalDatetimeString(user.value.premiumExpiresAt)
+    : ''
+  const formExpiresAt = form.hasExpiration && form.premiumExpiresAt ? form.premiumExpiresAt : ''
+
+  return (
+    form.role !== user.value.role ||
+    form.status !== user.value.status ||
+    form.isPremium !== user.value.isPremium ||
+    (form.isPremium && formExpiresAt !== dbExpiresAt)
+  )
+})
 
 async function save() {
   if (!isDirty.value || !user.value) return
@@ -178,11 +248,34 @@ async function save() {
   saveError.value = null
 
   try {
-    const updates: Record<string, string> = {}
+    const updates: Record<string, any> = {}
     if (form.role !== user.value.role) updates.role = form.role
     if (form.status !== user.value.status) updates.status = form.status
+    
+    // Check if premium status changed
+    if (form.isPremium !== user.value.isPremium) {
+      updates.isPremium = form.isPremium
+    }
+
+    // Check if premium expiration changed
+    if (form.isPremium) {
+      const dbExpiresAt = user.value.premiumExpiresAt
+        ? toLocalDatetimeString(user.value.premiumExpiresAt)
+        : ''
+      const formExpiresAt = form.hasExpiration && form.premiumExpiresAt ? form.premiumExpiresAt : ''
+      if (formExpiresAt !== dbExpiresAt) {
+        updates.premiumExpiresAt = form.hasExpiration && form.premiumExpiresAt
+          ? new Date(form.premiumExpiresAt).toISOString()
+          : null
+      }
+    } else if (user.value.isPremium) {
+      // If turning premium off, make sure to reset expiration
+      updates.premiumExpiresAt = null
+    }
 
     await $fetch(`/api/v1/admin/users/${userId}`, { method: 'PATCH', body: updates })
+    await refresh()
+    
     saved.value = true
     setTimeout(() => (saved.value = false), 3000)
   } catch (err: any) {

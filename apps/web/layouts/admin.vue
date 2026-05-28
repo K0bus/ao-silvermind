@@ -29,6 +29,9 @@
         <AdminNavLink to="/admin/data/game-data" icon="database" label="Game Data" />
         <AdminNavLink to="/admin/data/database" icon="server" label="Database Stats" />
 
+        <p class="px-3 py-2 mt-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Editorial</p>
+        <AdminNavLink to="/admin/guides" icon="book" label="Manage Guides" />
+
         <p class="px-3 py-2 mt-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">System</p>
         <AdminNavLink to="/admin/settings" icon="settings" label="Global Settings" />
       </nav>
@@ -108,6 +111,8 @@ const breadcrumb = computed<Crumb[]>(() => {
   if (p === '/admin/data/market') return [{ label: 'Data' }, { label: 'Market Prices' }]
   if (p === '/admin/data/system') return [{ label: 'Data' }, { label: 'System Config' }]
   if (p === '/admin/data/icons') return [{ label: 'Data' }, { label: 'Icons Sync' }]
+  if (p === '/admin/guides') return [{ label: 'Editorial' }, { label: 'Guides' }]
+  if (p === '/admin/guides/editor') return [{ label: 'Editorial', to: '/admin/guides' }, { label: 'Éditeur de Guide' }]
   if (p === '/admin/settings') return [{ label: 'System' }, { label: 'Settings' }]
   return [{ label: p.split('/').pop() ?? '' }]
 })

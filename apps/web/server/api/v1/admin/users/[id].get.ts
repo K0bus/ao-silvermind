@@ -20,6 +20,8 @@ export default defineEventHandler(async (event) => {
       lastLoginIp: true,
       createdAt: true,
       updatedAt: true,
+      isPremium: true,
+      premiumExpiresAt: true,
       _count: { select: { sessions: true, importJobs: true } },
     },
   })

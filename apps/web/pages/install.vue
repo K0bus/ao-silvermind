@@ -104,7 +104,7 @@ async function handleSubmit() {
   loading.value = true
 
   try {
-    const res = await $fetch<{ data: { id: string; email: string; username: string; role: 'ADMIN'; status: 'ACTIVE' } }>('/api/v1/install/bootstrap', {
+    const res = await $fetch<{ data: { id: string; email: string; username: string; role: 'ADMIN'; status: 'ACTIVE'; isPremium: boolean; premiumExpiresAt: string | null } }>('/api/v1/install/bootstrap', {
       method: 'POST',
       body: form,
     })

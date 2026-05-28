@@ -22,7 +22,9 @@ function prismaClientHasExpectedDelegates(client: PrismaClientInstance): boolean
          typeof c.craftingStation?.findUnique === 'function' &&
          typeof c.item?.findUnique === 'function' &&
          typeof c.lootTable?.findUnique === 'function' &&
-         typeof c.pvpKill?.findUnique === 'function'
+         typeof c.pvpKill?.findUnique === 'function' &&
+         typeof c.guide?.findUnique === 'function' &&
+         typeof c.guideCategory?.findUnique === 'function'
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClientInstance }

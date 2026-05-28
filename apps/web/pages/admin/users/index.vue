@@ -70,11 +70,15 @@
             <!-- User info -->
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-surface-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                <div class="w-8 h-8 rounded-full bg-surface-600 flex items-center justify-center text-xs font-bold text-white shrink-0 relative">
                   {{ user.username[0]?.toUpperCase() }}
+                  <span v-if="isPremium(user)" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 border border-surface-900 flex items-center justify-center text-[8px] text-black font-extrabold" title="Premium Member">★</span>
                 </div>
                 <div class="min-w-0">
-                  <p class="font-medium text-white truncate">{{ user.username }}</p>
+                  <div class="flex items-center gap-1.5">
+                    <p class="font-medium text-white truncate">{{ user.username }}</p>
+                    <span v-if="isPremium(user)" class="px-1 py-0.2 text-[9px] font-bold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider shrink-0">Premium</span>
+                  </div>
                   <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
                 </div>
               </div>
@@ -151,6 +155,8 @@ interface AdminUser {
   emailVerified: boolean
   lastLoginAt: string | null
   createdAt: string
+  isPremium: boolean
+  premiumExpiresAt: string | null
 }
 
 const filters = reactive({ q: '', role: '', status: '' })
@@ -230,6 +236,13 @@ function statusDot(status: string) {
     SUSPENDED: 'bg-red-400',
     PENDING_VERIFICATION: 'bg-yellow-400',
   }[status] ?? 'bg-gray-400'
+}
+
+function isPremium(u: AdminUser) {
+  if (u.role === 'ADMIN') return true
+  if (!u.isPremium) return false
+  if (!u.premiumExpiresAt) return true
+  return new Date(u.premiumExpiresAt) > new Date()
 }
 
 onMounted(load)

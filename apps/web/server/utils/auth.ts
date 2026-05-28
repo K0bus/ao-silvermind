@@ -16,6 +16,8 @@ export type SessionUser = {
   role: string
   status: string
   avatar?: string | null
+  isPremium: boolean
+  premiumExpiresAt?: Date | null
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -53,7 +55,16 @@ export async function getSessionUser(token: string): Promise<SessionUser | null>
     where: { token },
     include: {
       user: {
-        select: { id: true, email: true, username: true, role: true, status: true, avatar: true },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          status: true,
+          avatar: true,
+          isPremium: true,
+          premiumExpiresAt: true,
+        },
       },
     },
   })
@@ -61,7 +72,7 @@ export async function getSessionUser(token: string): Promise<SessionUser | null>
   if (!session || session.expiresAt < new Date()) return null
   if (session.user.status === 'SUSPENDED') return null
 
-  const user = session.user as SessionUser
+  const user = session.user as unknown as SessionUser
   await redis.setex(cacheKey, SESSION_CACHE_TTL, JSON.stringify(user)).catch(() => {})
 
   return user

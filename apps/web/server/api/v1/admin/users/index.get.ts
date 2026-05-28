@@ -44,6 +44,8 @@ export default defineEventHandler(async (event) => {
         emailVerified: true,
         lastLoginAt: true,
         createdAt: true,
+        isPremium: true,
+        premiumExpiresAt: true,
         _count: { select: { sessions: true } },
       },
     }),

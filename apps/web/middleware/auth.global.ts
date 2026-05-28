@@ -39,6 +39,37 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo(isAuthenticated.value && isAdmin.value ? '/admin' : '/')
   }
 
+  if (to.path === '/premium/subscribe') return
+
+  const premiumRoutes = [
+    { path: '/items/profit', key: 'items_profit' },
+    { path: '/items/flip', key: 'items_flip' },
+    { path: '/crafting', key: 'crafting' },
+    { path: '/market', key: 'market' },
+    { path: '/islands', key: 'islands' },
+  ]
+
+  const matched = premiumRoutes.find(r => to.path === r.path || to.path.startsWith(r.path + '/'))
+  
+  if (matched) {
+    const { locks, loaded, fetchLocks } = usePremiumLocks()
+    if (!loaded.value) {
+      await fetchLocks()
+    }
+    
+    if (locks.value[matched.key]) {
+      const { isPremium } = useAuth()
+      
+      if (!isAuthenticated.value) {
+        return navigateTo(`/auth/login?redirect=${encodeURIComponent(to.fullPath)}`)
+      }
+      
+      if (!isPremium.value) {
+        return navigateTo('/premium/subscribe')
+      }
+    }
+  }
+
   // Routes publiques
   const publicRoutes = ['/', '/auth/login', '/auth/register', '/auth/reset-password']
   if (publicRoutes.includes(to.path)) return

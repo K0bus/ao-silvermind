@@ -100,6 +100,63 @@
           </div>
         </div>
 
+        <!-- Premium Access Control Section -->
+        <div class="card p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold">Premium Access Control</h2>
+              <p class="text-sm text-gray-500">Configure which features require a Premium Membership</p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 rounded bg-surface-800/40 border border-surface-700/30">
+              <div>
+                <span class="text-sm font-semibold text-white block">Profit Analysis (/items/profit)</span>
+                <span class="text-xs text-gray-500">Enable premium restriction on profit analysis tool.</span>
+              </div>
+              <input v-model="settings.premium_lock_items_profit" type="checkbox" class="text-amber-500 rounded border-gray-600 focus:ring-amber-500 bg-surface-800" />
+            </div>
+
+            <div class="flex items-center justify-between p-3 rounded bg-surface-800/40 border border-surface-700/30">
+              <div>
+                <span class="text-sm font-semibold text-white block">Crafting Calculator (/crafting)</span>
+                <span class="text-xs text-gray-500">Enable premium restriction on crafting calculation tool.</span>
+              </div>
+              <input v-model="settings.premium_lock_crafting" type="checkbox" class="text-amber-500 rounded border-gray-600 focus:ring-amber-500 bg-surface-800" />
+            </div>
+
+            <div class="flex items-center justify-between p-3 rounded bg-surface-800/40 border border-surface-700/30">
+              <div>
+                <span class="text-sm font-semibold text-white block">Item Flipping (/items/flip)</span>
+                <span class="text-xs text-gray-500">Enable premium restriction on item flipping analyzer.</span>
+              </div>
+              <input v-model="settings.premium_lock_items_flip" type="checkbox" class="text-amber-500 rounded border-gray-600 focus:ring-amber-500 bg-surface-800" />
+            </div>
+
+            <div class="flex items-center justify-between p-3 rounded bg-surface-800/40 border border-surface-700/30">
+              <div>
+                <span class="text-sm font-semibold text-white block">Market Prices (/market)</span>
+                <span class="text-xs text-gray-500">Enable premium restriction on market price monitoring.</span>
+              </div>
+              <input v-model="settings.premium_lock_market" type="checkbox" class="text-amber-500 rounded border-gray-600 focus:ring-amber-500 bg-surface-800" />
+            </div>
+
+            <div class="flex items-center justify-between p-3 rounded bg-surface-800/40 border border-surface-700/30">
+              <div>
+                <span class="text-sm font-semibold text-white block">Islands Manager (/islands)</span>
+                <span class="text-xs text-gray-500">Enable premium restriction on personal and guild islands tracking.</span>
+              </div>
+              <input v-model="settings.premium_lock_islands" type="checkbox" class="text-amber-500 rounded border-gray-600 focus:ring-amber-500 bg-surface-800" />
+            </div>
+          </div>
+        </div>
+
         <!-- General Info Card -->
         <div class="card p-6 opacity-60">
           <div class="flex items-center gap-3 mb-4">
@@ -155,7 +212,12 @@ const settings = ref<Record<string, any>>({
   discord_webhook_url: '',
   discord_market_highlight_webhook_url: '',
   discord_embed_image_url: '',
-  public_app_url: ''
+  public_app_url: '',
+  premium_lock_items_profit: false,
+  premium_lock_crafting: false,
+  premium_lock_items_flip: false,
+  premium_lock_market: false,
+  premium_lock_islands: false
 })
 
 const loading = ref(false)

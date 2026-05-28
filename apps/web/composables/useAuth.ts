@@ -9,6 +9,13 @@ export const useAuth = () => {
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'ADMIN')
   const isModerator = computed(() => ['ADMIN', 'MODERATOR'].includes(user.value?.role ?? ''))
+  const isPremium = computed(() => {
+    if (!user.value) return false
+    if (user.value.role === 'ADMIN') return true
+    if (!user.value.isPremium) return false
+    if (!user.value.premiumExpiresAt) return true
+    return new Date(user.value.premiumExpiresAt) > new Date()
+  })
 
   async function fetchUser() {
     // useRequestFetch forward les cookies en SSR
@@ -70,6 +77,7 @@ export const useAuth = () => {
     isAuthenticated,
     isAdmin,
     isModerator,
+    isPremium,
     fetchUser,
     login,
     register,

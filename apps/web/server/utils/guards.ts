@@ -24,3 +24,28 @@ export function requireModerator(event: H3Event): SessionUser {
   }
   return user
 }
+
+export function isPremiumUser(user: SessionUser): boolean {
+  if (user.role === 'ADMIN') return true
+  if (!user.isPremium) return false
+  if (!user.premiumExpiresAt) return true
+  return new Date(user.premiumExpiresAt) > new Date()
+}
+
+export function requirePremium(event: H3Event): SessionUser {
+  const user = requireAuth(event)
+  if (!isPremiumUser(user)) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden: Premium membership required' })
+  }
+  return user
+}
+
+export async function checkFeaturePremium(key: string, event: H3Event) {
+  const { prisma } = await import('./prisma')
+  const lock = await prisma.systemConfig.findUnique({
+    where: { key: `premium_lock_${key}` },
+  })
+  if (lock && lock.value === true) {
+    requirePremium(event)
+  }
+}

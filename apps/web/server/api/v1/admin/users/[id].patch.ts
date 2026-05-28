@@ -6,7 +6,12 @@ import { invalidateUserSessions } from '~/server/utils/auth'
 const schema = z.object({
   role: z.enum(['ADMIN', 'MODERATOR', 'USER']).optional(),
   status: z.enum(['ACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION']).optional(),
-}).refine((d) => d.role !== undefined || d.status !== undefined, {
+  isPremium: z.boolean().optional(),
+  premiumExpiresAt: z.preprocess(
+    (val) => (val === '' || val === undefined || val === null ? null : new Date(val as string)),
+    z.date().nullable().optional()
+  ),
+}).refine((d) => d.role !== undefined || d.status !== undefined || d.isPremium !== undefined || d.premiumExpiresAt !== undefined, {
   message: 'At least one field required',
 })
 
@@ -26,13 +31,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, statusMessage: body.error.errors[0]?.message ?? 'Invalid input' })
   }
 
-  const target = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true, status: true } })
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, role: true, status: true, isPremium: true, premiumExpiresAt: true }
+  })
   if (!target) throw createError({ statusCode: 404, statusMessage: 'User not found' })
 
   const updated = await prisma.user.update({
     where: { id },
     data: body.data,
-    select: { id: true, email: true, username: true, role: true, status: true },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      role: true,
+      status: true,
+      isPremium: true,
+      premiumExpiresAt: true
+    },
   })
 
   // Si l'user est suspendu → invalider toutes ses sessions immédiatement
@@ -47,7 +63,12 @@ export default defineEventHandler(async (event) => {
       action: 'user.update',
       targetType: 'User',
       targetId: id,
-      before: { role: target.role, status: target.status },
+      before: {
+        role: target.role,
+        status: target.status,
+        isPremium: target.isPremium,
+        premiumExpiresAt: target.premiumExpiresAt
+      },
       after: body.data,
       ipAddress: getRequestIP(event),
     },

@@ -85,6 +85,8 @@ export default defineEventHandler(async (event) => {
         username: true,
         role: true,
         status: true,
+        isPremium: true,
+        premiumExpiresAt: true,
       },
     })
   })

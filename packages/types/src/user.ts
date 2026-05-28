@@ -8,6 +8,8 @@ export interface AuthUser {
   role: UserRole
   status: UserStatus
   avatar?: string | null
+  isPremium: boolean
+  premiumExpiresAt?: string | null
 }
 
 export interface UserSummary extends AuthUser {
