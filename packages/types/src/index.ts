@@ -5,3 +5,5 @@ export * from './builds'
 export * from './pvp'
 export * from './islands'
 export * from './guides'
+export * from './discord'
+

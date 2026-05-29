@@ -199,6 +199,12 @@ model User {
   resetPasswordToken   String?    @unique
   resetPasswordExpires DateTime?
 
+  discordId            String?    @unique
+  discordUsername      String?
+  discordAccessToken   String?
+  discordRefreshToken  String?
+  discordTokenExpiresAt DateTime?
+
   lastLoginAt          DateTime?
   lastLoginIp          String?
 
@@ -210,6 +216,7 @@ model User {
   buildCollections     BuildCollection[]
   islands              Island[]
   guides               Guide[]
+  discordGuildConfigs  DiscordGuildConfig[]
 
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
@@ -1159,6 +1166,46 @@ model Guide {
   @@index([categoryId])
   @@index([published])
   @@index([createdAt])
+}
+
+model DiscordGuildConfig {
+  id                      String   @id // Discord Guild ID
+  name                    String
+  icon                    String?
+  
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  guildId                 String?  // Albion Online Guild ID
+  guildName               String?  // Albion Online Guild Name
+  serverConnection        String   @default("WEST") // WEST, EAST, EUROPE
+  
+  killboardEnabled        Boolean  @default(false)
+  killboardChannelId      String?
+  
+  statsEnabled            Boolean  @default(false)
+  statsChannelId          String?
+  statsMessageId          String?
+  
+  serverStatusEnabled     Boolean  @default(false)
+  serverStatusChannelId   String?
+  serverStatusRegion      String   @default("ALL") // ALL, WEST, EAST, EUROPE
+  
+  profitAlertsEnabled     Boolean  @default(false)
+  profitAlertsChannelId   String?
+  profitAlertsMinMargin   Float    @default(10.0)
+  
+  dailyEventEnabled       Boolean  @default(false)
+  dailyEventChannelId     String?
+  dailyEventText          String?
+  
+  itemSearchEnabled       Boolean  @default(true)
+  craftingTreeEnabled     Boolean  @default(true)
+  
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([userId])
 }
 
 

@@ -2,7 +2,7 @@ ARG NODE_VERSION=22
 
 # ── Base ──────────────────────────────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS base
-RUN npm install -g pnpm@9
+RUN apk add --no-cache ttf-dejavu fontconfig && npm install -g pnpm@9
 WORKDIR /app
 
 # ── Dependencies ──────────────────────────────────────────────

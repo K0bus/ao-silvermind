@@ -131,6 +131,30 @@ services:
       - /app/node_modules
       - /app/packages/database/node_modules
 
+  discord-bot:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+      target: development
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://albion:${POSTGRES_PASSWORD}@postgres:5432/albion_tool
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/packages/database/node_modules
+    command: ["sh", "-c", "pnpm --filter @albion-tool/database db:generate && pnpm --filter @albion-tool/scripts run bot"]
+
   db-studio:
     build:
       context: .

@@ -11,13 +11,16 @@
     "import:backfill": "tsx --env-file=../.env import/backfill-resolved-prices.ts",
     "worker": "tsx --env-file=../.env worker/index.ts",
     "worker:dev": "tsx watch worker/index.ts",
-    "worker:prod": "tsx worker/index.ts"
+    "worker:prod": "tsx worker/index.ts",
+    "bot": "tsx --env-file=../.env bot/index.ts"
   },
   "dependencies": {
     "@albion-tool/ao-parser": "workspace:*",
     "@albion-tool/database": "workspace:*",
     "@albion-tool/market-engine": "workspace:*",
-    "@albion-tool/queue": "workspace:*"
+    "@albion-tool/queue": "workspace:*",
+    "discord.js": "^14.26.4",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "tsx": "^4.15.0",

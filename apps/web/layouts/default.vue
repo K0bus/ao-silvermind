@@ -112,6 +112,7 @@
               <div class="nav-user-email">{{ auth.user.value?.email }}</div>
             </div>
             <NuxtLink to="/builds/me" class="nav-user-item" role="menuitem" @click="userMenuOpen = false">Mes builds</NuxtLink>
+            <NuxtLink v-if="auth.isPremium.value" to="/premium/bot" class="nav-user-item" role="menuitem" @click="userMenuOpen = false">Mes Bots</NuxtLink>
             <NuxtLink to="/settings" class="nav-user-item" role="menuitem" @click="userMenuOpen = false">Paramètres</NuxtLink>
             <button type="button" class="nav-user-item nav-user-logout" role="menuitem" @click="onLogout">
               Se déconnecter

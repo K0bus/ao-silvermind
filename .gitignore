@@ -33,3 +33,6 @@ public/icons/cache/
 # IDE settings and scratch logs
 .antigravitycli/
 scratch/
+
+# Bot icon cache
+scripts/bot/cache/
