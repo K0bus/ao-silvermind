@@ -25,6 +25,9 @@ const processedEventsCache = new Map<string, Set<number>>()
 // Keep track of last sent daily event texts to avoid duplicates
 const lastSentEventTextCache = new Map<string, string>()
 
+// Keep track of which guild configs are currently syncing to prevent overlapping runs and duplicate posts
+const activeSyncs = new Set<string>()
+
 // ── INITIALIZATION ────────────────────────────────────────────
 const token = process.env.DISCORD_BOT_TOKEN
 const clientId = process.env.DISCORD_CLIENT_ID
@@ -903,49 +906,70 @@ async function handleStatusCommand(interaction: any) {
 
 // ── BACKGROUND TASKS & POLLING ────────────────────────────────
 async function startBackgroundLoops() {
-  console.log('[Discord Bot] Starting background polling tasks (60s loop)...')
+  console.log('[Discord Bot] Starting background polling tasks...')
   
+  // 1. Fast Killboard Sync Loop (every 30 seconds)
   setInterval(async () => {
     try {
       const configs = await prisma.discordGuildConfig.findMany()
-
-      for (const config of configs) {
-        // 1. Killboard updates
-        if (config.killboardEnabled && config.killboardChannelId && config.guildId) {
-          await runKillboardSync(config)
-        }
-
-        // 2. Automated Guild Stats dashboard
-        if (config.statsEnabled && config.statsChannelId && config.guildId) {
-          await runStatsDashboardSync(config)
-        }
-
-        // 3. Live Server Status updates
-        if (config.serverStatusEnabled && config.serverStatusChannelId) {
-          await runServerStatusSync(config)
-        }
-
-        // 4. Profit Alerts
-        if (config.profitAlertsEnabled && config.profitAlertsChannelId) {
-          await runProfitAlertsSync(config)
-        }
-
-        // 5. Daily Event Announcements
-        if (config.dailyEventEnabled && config.dailyEventChannelId) {
-          await runDailyEventSync(config)
-        }
-      }
+      await Promise.allSettled(
+        configs.map(async (config) => {
+          if (config.killboardEnabled && config.killboardChannelId && config.guildId) {
+            await runKillboardSync(config)
+          }
+        })
+      )
     } catch (err) {
-      console.error('[Discord Bot] Error in background polling cycle:', err)
+      console.error('[Discord Bot] Error in background killboard sync loop:', err)
     }
-  }, 60000) // Poll every 60 seconds
+  }, 30000) // Poll every 30 seconds for kills
+
+  // 2. Regular Tasks Sync Loop (every 60 seconds)
+  setInterval(async () => {
+    try {
+      const configs = await prisma.discordGuildConfig.findMany()
+      await Promise.allSettled(
+        configs.map(async (config) => {
+          const tasks: Promise<any>[] = []
+
+          // 2. Automated Guild Stats dashboard
+          if (config.statsEnabled && config.statsChannelId && config.guildId) {
+            tasks.push(runStatsDashboardSync(config))
+          }
+
+          // 3. Live Server Status updates
+          if (config.serverStatusEnabled && config.serverStatusChannelId) {
+            tasks.push(runServerStatusSync(config))
+          }
+
+          // 4. Profit Alerts
+          if (config.profitAlertsEnabled && config.profitAlertsChannelId) {
+            tasks.push(runProfitAlertsSync(config))
+          }
+
+          // 5. Daily Event Announcements
+          if (config.dailyEventEnabled && config.dailyEventChannelId) {
+            tasks.push(runDailyEventSync(config))
+          }
+
+          await Promise.allSettled(tasks)
+        })
+      )
+    } catch (err) {
+      console.error('[Discord Bot] Error in background regular sync loop:', err)
+    }
+  }, 60000) // Poll every 60 seconds for other tasks
 }
 
 // Helper: Run Killboard Sync
 async function runKillboardSync(config: any) {
+  if (activeSyncs.has(config.id)) return
+  activeSyncs.add(config.id)
+
   try {
     const apiBase = REGION_APIS[config.serverConnection] ?? REGION_APIS.WEST
-    const url = `${apiBase}/events?limit=15&guildId=${config.guildId}`
+    // Fetch 50 events instead of 15 to prevent missing events during highly active periods or API delay batches
+    const url = `${apiBase}/events?limit=50&guildId=${config.guildId}`
 
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) })
     if (!res.ok) return
@@ -954,26 +978,43 @@ async function runKillboardSync(config: any) {
     if (!Array.isArray(events)) return
 
     // Ensure cache exists for this guild
-    if (!processedEventsCache.has(config.id)) {
+    const isNewCache = !processedEventsCache.has(config.id)
+    if (isNewCache) {
       processedEventsCache.set(config.id, new Set())
-      // Fill cache with first items on startup to avoid spamming historical kills
-      events.forEach(e => processedEventsCache.get(config.id)!.add(e.EventId))
-      return
     }
 
     const cache = processedEventsCache.get(config.id)!
     const channel = await client.channels.fetch(config.killboardChannelId).catch(() => null) as any
     if (!channel) return
 
-    // Sort chronologically (oldest first)
-    const sortedEvents = events.reverse()
+    // Sort chronologically (oldest first) so they post in order
+    const sortedEvents = [...events].reverse()
+
+    const now = Date.now()
 
     for (const event of sortedEvents) {
       if (cache.has(event.EventId)) continue
+
+      // Calculate the age of the event in minutes
+      const eventTime = new Date(event.TimeStamp).getTime()
+      const ageMinutes = (now - eventTime) / 60000
+
+      // Add to cache so we don't process it again
       cache.add(event.EventId)
-      
-      // Limit cache size
-      if (cache.size > 200) {
+
+      // On startup/reboot (isNewCache), skip events older than 20 minutes to avoid spamming historical kills.
+      // But allow processing of any recent kills from the last 20 minutes!
+      if (isNewCache && ageMinutes > 20) {
+        continue
+      }
+
+      // Skip events older than 30 minutes to prevent posting extremely stale events
+      if (ageMinutes > 30) {
+        continue
+      }
+
+      // Limit cache size to prevent memory leaks (increased from 200 to 1000 since limit is 50)
+      if (cache.size > 1000) {
         const firstValue = cache.values().next().value
         if (firstValue !== undefined) cache.delete(firstValue)
       }
@@ -996,7 +1037,7 @@ async function runKillboardSync(config: any) {
           `**Victime:** ${victimName} [${event.Victim?.GuildName || 'Sans Guilde'}] (IP: ${ipVictim})\n` +
           `**Fame de Combat:** ${fame.toLocaleString()} 💎`
         )
-        .setColor(isKill ? 0x22c55e : 0xef4444) // Green for kill, Red for death
+        .setColor(isKill ? 0x22c55e : 0xef4444)
         .setThumbnail(`https://render.albiononline.com/v1/item/${event.Killer?.Equipment?.MainHand?.Type || 'T1_WOOD'}.png`)
         .setFooter({ text: `Albion SilverMind • Event ID: ${event.EventId}` })
         .setTimestamp(new Date(event.TimeStamp))
@@ -1005,6 +1046,8 @@ async function runKillboardSync(config: any) {
     }
   } catch (err) {
     console.error(`[Discord Bot] Error syncing killboard for guild ${config.name}:`, err)
+  } finally {
+    activeSyncs.delete(config.id)
   }
 }
 

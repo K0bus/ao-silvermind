@@ -148,12 +148,55 @@ const schedulerWorker = new Worker(
           const events = await response.json() as any[]
           const { saveKillEvents } = await import('@albion-tool/database')
           await saveKillEvents(events)
-          console.log(`[scheduler-worker] Successfully synced ${events.length} PvP events.`)
+          console.log(`[scheduler-worker] Successfully synced ${events.length} global PvP events.`)
         } else {
-          console.error(`[scheduler-worker] Failed to fetch PvP events: status ${response.status}`)
+          console.error(`[scheduler-worker] Failed to fetch global PvP events: status ${response.status}`)
         }
       } catch (err) {
-        console.error('[scheduler-worker] Error during PvP events sync:', err)
+        console.error('[scheduler-worker] Error during global PvP events sync:', err)
+      }
+
+      console.log('[scheduler-worker] Syncing guild-specific PvP events...')
+      try {
+        const configs = await prisma.discordGuildConfig.findMany({
+          where: {
+            killboardEnabled: true,
+            guildId: { not: null }
+          }
+        })
+
+        const REGION_APIS: Record<string, string> = {
+          WEST: 'https://gameinfo.albiononline.com/api/gameinfo',
+          EAST: 'https://gameinfo-sgp.albiononline.com/api/gameinfo',
+          EUROPE: 'https://gameinfo-ams.albiononline.com/api/gameinfo',
+        }
+
+        const { saveKillEvents } = await import('@albion-tool/database')
+
+        await Promise.allSettled(
+          configs.map(async (config) => {
+            if (!config.guildId) return
+            const apiBase = REGION_APIS[config.serverConnection] ?? REGION_APIS.WEST
+            const url = `${apiBase}/events?limit=50&guildId=${config.guildId}`
+            
+            try {
+              const res = await fetch(url, { signal: AbortSignal.timeout(6000) })
+              if (res.ok) {
+                const events = await res.json() as any[]
+                if (Array.isArray(events) && events.length > 0) {
+                  await saveKillEvents(events)
+                  console.log(`[scheduler-worker] Successfully synced ${events.length} PvP events for guild ${config.name} (${config.guildId}).`)
+                }
+              } else {
+                console.error(`[scheduler-worker] Failed to fetch PvP events for guild ${config.name}: status ${res.status}`)
+              }
+            } catch (err) {
+              console.error(`[scheduler-worker] Error syncing PvP events for guild ${config.name}:`, err)
+            }
+          })
+        )
+      } catch (err) {
+        console.error('[scheduler-worker] Error during guild PvP events sync:', err)
       }
     }
     else if (target === 'pvp-historical-sync') {
