@@ -1051,6 +1051,51 @@ async function runKillboardSync(config: any) {
   }
 }
 
+// Helper: Get Guild Stats Image Background
+async function getGuildStatsBackgroundImage(): Promise<Buffer> {
+  const cachePath = path.join(IMAGE_CACHE_DIR, 'guild_stats_bg.jpeg')
+  
+  if (fs.existsSync(cachePath)) {
+    try {
+      return fs.readFileSync(cachePath)
+    } catch (e) {
+      console.error('[Discord Bot] Error reading cached guild stats background:', e)
+    }
+  }
+
+  try {
+    const response = await fetch('https://assets.albiononline.com/uploads/media/default/media/2790f96c07c891b0eac3b0c6b8845ebe979acb75.jpeg')
+    if (response.ok) {
+      const arrayBuffer = await response.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      fs.writeFileSync(cachePath, buffer)
+      return buffer
+    }
+  } catch (error) {
+    console.error('[Discord Bot] Error fetching guild stats background image:', error)
+  }
+
+  return Buffer.alloc(0)
+}
+
+let silvermindLogoBase64 = ''
+
+function getSilvermindLogoBase64(): string {
+  if (silvermindLogoBase64) return silvermindLogoBase64
+  
+  try {
+    const logoPath = path.join(__dirname, '../../apps/web/public/images/silvermind/silvermind-logo.png')
+    if (fs.existsSync(logoPath)) {
+      const buffer = fs.readFileSync(logoPath)
+      silvermindLogoBase64 = `data:image/png;base64,${buffer.toString('base64')}`
+      return silvermindLogoBase64
+    }
+  } catch (err) {
+    console.error('[Discord Bot] Error loading SilverMind logo:', err)
+  }
+  return ''
+}
+
 // Helper: Run Guild Stats Dashboard Sync
 async function runStatsDashboardSync(config: any) {
   try {
@@ -1063,35 +1108,201 @@ async function runStatsDashboardSync(config: any) {
     const guildData = await res.json()
     if (!guildData || !guildData.Name) return
 
-    const killFame = guildData.killFame ?? 0
+    const killFame = guildData.killFame ?? guildData.KillFame ?? 0
+    const deathFame = guildData.DeathFame ?? guildData.deathFame ?? 0
     const memberCount = guildData.MemberCount ?? 0
+    const ratio = deathFame > 0 ? (killFame / deathFame) : (killFame > 0 ? killFame : 0)
+
+    // Fetch and aggregate member stats for fame details
+    let pveFame = 0
+    let gatheringFame = 0
+    let craftingFame = 0
+
+    try {
+      const membersRes = await fetch(`${apiBase}/guilds/${config.guildId}/members`, { signal: AbortSignal.timeout(5000) })
+      if (membersRes.ok) {
+        const membersData = await membersRes.json()
+        if (Array.isArray(membersData)) {
+          for (const m of membersData) {
+            pveFame += m.LifetimeStatistics?.PvE?.Total || 0
+            gatheringFame += m.LifetimeStatistics?.Gathering?.All?.Total || 0
+            craftingFame += m.LifetimeStatistics?.Crafting?.Total || 0
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`[Discord Bot] Non-critical error fetching members for guild ${config.name} stats:`, err)
+    }
 
     const channel = await client.channels.fetch(config.statsChannelId).catch(() => null) as any
     if (!channel) return
 
+    // Generate Guild Stats Image
+    const bgBuffer = await getGuildStatsBackgroundImage()
+    
+    let sharpImg: sharp.Sharp
+    if (bgBuffer.length > 0) {
+      sharpImg = sharp(bgBuffer).resize(800, 450, { fit: 'cover', position: 'center' })
+    } else {
+      sharpImg = sharp({
+        create: {
+          width: 800,
+          height: 450,
+          channels: 4,
+          background: { r: 11, g: 11, b: 20, alpha: 1 }
+        }
+      })
+    }
+
+    const dateStr = new Date().toLocaleDateString('fr-FR')
+    const timeStr = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const serverName = REGION_NAMES[config.serverConnection] || config.serverConnection
+    const allianceDisplay = guildData.AllianceTag ? `[${guildData.AllianceTag}]` : 'Aucune'
+    const logoBase64 = getSilvermindLogoBase64()
+
+    const svgOverlay = `
+      <svg width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="top-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1c1c28" stop-opacity="0.85" />
+            <stop offset="100%" stop-color="#14141d" stop-opacity="0.4" />
+          </linearGradient>
+
+          <linearGradient id="card-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#181824" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="#0d0d14" stop-opacity="0.95" />
+          </linearGradient>
+          
+          <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#c9a14a" />
+            <stop offset="100%" stop-color="#fcd34d" />
+          </linearGradient>
+
+          <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.6" filter-margin="4" />
+          </filter>
+        </defs>
+
+        <style>
+          .font-sans { font-family: 'DejaVu Sans', 'Noto Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', Arial, Helvetica, sans-serif; }
+          .emoji { font-family: 'Noto Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
+          .guild-name { font-size: 28px; font-weight: 900; fill: url(#gold-grad); letter-spacing: 2px; filter: url(#shadow); }
+          .meta-label { font-size: 11px; fill: #94a3b8; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
+          .meta-value { font-size: 15px; fill: #ffffff; font-weight: bold; }
+          .card-title { font-size: 13px; font-weight: bold; fill: url(#gold-grad); letter-spacing: 2px; }
+          .stat-label { font-size: 12px; fill: #cbd5e1; font-weight: 500; }
+          .stat-value { font-size: 14px; fill: #ffffff; font-weight: bold; text-anchor: end; }
+          .stat-value-gold { font-size: 14px; fill: #fcd34d; font-weight: bold; text-anchor: end; }
+          .brand-title { font-size: 16px; font-weight: 900; fill: #ffffff; opacity: 0.85; letter-spacing: 3px; }
+          .brand-subtitle { font-size: 10px; fill: #e2e8f0; letter-spacing: 1.5px; font-weight: bold; }
+        </style>
+
+        <!-- TOP HORIZONTAL BAND -->
+        <rect x="30" y="20" width="740" height="90" rx="6" fill="url(#top-grad)" stroke="#c9a14a" stroke-width="1.5" stroke-opacity="0.35" filter="url(#shadow)" />
+        <line x1="30" y1="110" x2="770" y2="110" stroke="#c9a14a" stroke-width="1" opacity="0.2" />
+
+        <g transform="translate(50, 35)" filter="url(#shadow)">
+          ${logoBase64 ? `
+            <image href="${logoBase64}" x="-30" y="0" width="60" height="60" />
+          ` : `
+            <path d="M 0 0 L 30 0 C 30 25 25 45 0 60 C -25 45 -30 25 0 0 Z" fill="#12121a" stroke="url(#gold-grad)" stroke-width="2.5" />
+            <path d="M 0 5 L 0 55 M -20 20 L 20 20" stroke="#c9a14a" stroke-width="1.5" stroke-opacity="0.7" />
+          `}
+        </g>
+
+        <text x="100" y="65" class="font-sans guild-name">${guildData.Name.toUpperCase()}</text>
+        <text x="100" y="85" class="font-sans" fill="#a1a1aa" font-size="12px" letter-spacing="1px">TABLEAU DE BORD OFFICIEL</text>
+
+        <g transform="translate(420, 42)">
+          <text x="0" y="15" class="font-sans meta-label">Membres</text>
+          <text x="0" y="35" class="font-sans meta-value">${memberCount}</text>
+        </g>
+        <g transform="translate(520, 42)">
+          <text x="0" y="15" class="font-sans meta-label">Alliance</text>
+          <text x="0" y="35" class="font-sans meta-value">${allianceDisplay}</text>
+        </g>
+        <g transform="translate(650, 42)">
+          <text x="0" y="15" class="font-sans meta-label">Serveur</text>
+          <text x="0" y="35" class="font-sans meta-value">${serverName}</text>
+        </g>
+
+        <!-- RIGHT VERTICAL PANEL -->
+        <g transform="translate(480, 135)" filter="url(#shadow)">
+          <rect x="0" y="0" width="290" height="270" rx="6" fill="url(#card-grad)" stroke="#c9a14a" stroke-width="1.5" stroke-opacity="0.35" />
+
+          <text x="25" y="35" class="font-sans card-title">RÉPARTITION DE LA FAME</text>
+          <line x1="25" y1="48" x2="265" y2="48" stroke="#c9a14a" stroke-width="1" opacity="0.3" />
+
+          <g transform="translate(25, 75)">
+            <path d="M 0 10 L 10 0 M 2 10 L 0 8 M 8 0 L 10 2" stroke="#fcd34d" stroke-width="2" stroke-linecap="round" transform="translate(0, -10)" />
+            <path d="M 10 10 L 0 0 M 8 10 L 10 8 M 2 0 L 0 2" stroke="#fcd34d" stroke-width="2" stroke-linecap="round" transform="translate(0, -10)" />
+            <text x="22" y="0" class="font-sans stat-label">Fame PvP Kills</text>
+            <text x="240" y="0" class="font-sans stat-value-gold">${killFame.toLocaleString()}</text>
+          </g>
+          
+          <g transform="translate(25, 105)">
+            <path d="M 6 1 C 3.2 1 1 3.2 1 6 C 1 7.8 1.8 9.4 3 10.4 L 3 13 C 3 13.5 3.5 14 4 14 L 8 14 C 8.5 14 9 13.5 9 13 L 9 10.4 C 10.2 9.4 11 7.8 11 6 C 11 3.2 8.8 1 6 1 Z M 4 6 C 4 5.4 4.4 5 5 5 C 5.6 5 6 5.4 6 6 C 6 6.6 5.6 7 5 7 C 4.4 7 4 6.6 4 6 Z M 8 6 C 8 5.4 8.4 5 9 5 C 9.6 5 10 5.4 10 6 C 10 6.6 9.6 7 9 7 C 8.4 7 8 6.6 8 6 Z M 5 10 L 7 10 L 7 12 L 5 12 Z" fill="#ef4444" transform="translate(0, -11)" />
+            <text x="22" y="0" class="font-sans stat-label">Fame Morts</text>
+            <text x="240" y="0" class="font-sans stat-value" fill="#f87171">${deathFame.toLocaleString()}</text>
+          </g>
+
+          <g transform="translate(25, 135)">
+            <path d="M 6 0 L 12 0 C 12 5 10 9 6 12 C 2 9 0 5 0 0 Z" fill="#60a5fa" stroke="#60a5fa" stroke-width="1" transform="translate(0, -10)" />
+            <text x="22" y="0" class="font-sans stat-label">Ratio Global K/D</text>
+            <text x="240" y="0" class="font-sans stat-value" fill="#60a5fa">${ratio.toFixed(2)}</text>
+          </g>
+
+          <g transform="translate(25, 175)">
+            <path d="M 6 0 L 11 7 L 8 7 L 11 11 L 1 11 L 4 7 L 1 7 Z M 5 11 L 7 11 L 7 14 L 5 14 Z" fill="#10b981" transform="translate(0, -11)" />
+            <text x="22" y="0" class="font-sans stat-label">Fame PvE</text>
+            <text x="240" y="0" class="font-sans stat-value">${pveFame > 0 ? pveFame.toLocaleString() : '—'}</text>
+          </g>
+
+          <g transform="translate(25, 205)">
+            <path d="M 1 1 Q 6 -2 11 1 L 9 3 Q 6 1 3 3 Z" fill="#cbd5e1" transform="translate(0, -10)" />
+            <rect x="5" y="3" width="2" height="10" rx="0.5" fill="#d97706" transform="translate(0, -10)" />
+            <text x="22" y="0" class="font-sans stat-label">Fame Récolte</text>
+            <text x="240" y="0" class="font-sans stat-value">${gatheringFame > 0 ? gatheringFame.toLocaleString() : '—'}</text>
+          </g>
+
+          <g transform="translate(25, 235)">
+            <rect x="1" y="2" width="10" height="4" rx="1" fill="#cbd5e1" transform="translate(0, -10)" />
+            <rect x="4" y="6" width="3" height="8" rx="0.5" fill="#d97706" transform="translate(0, -10)" />
+            <text x="22" y="0" class="font-sans stat-label">Fame Artisanat</text>
+            <text x="240" y="0" class="font-sans stat-value">${craftingFame > 0 ? craftingFame.toLocaleString() : '—'}</text>
+          </g>
+        </g>
+
+        <!-- FOOTER -->
+        <text x="770" y="425" text-anchor="end" class="font-sans brand-subtitle" opacity="0.85" filter="url(#shadow)">ACTUALISÉ LE ${dateStr} À ${timeStr} • ALBION - SILVERMIND</text>
+      </svg>
+    `
+
+    const pngBuffer = await sharpImg
+      .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
+      .png()
+      .toBuffer()
+
+    const file = new AttachmentBuilder(pngBuffer, { name: 'guild-stats.png' })
+
     const embed = new EmbedBuilder()
       .setTitle(`🛡️ Tableau de Bord - ${guildData.Name}`)
-      .setDescription(
-        `Mise à jour en temps réel des statistiques globales de la guilde.\n\n` +
-        `• **Membres Actifs:** \`${memberCount}\`\n` +
-        `• **Fame PvP Totale:** \`${killFame.toLocaleString()}\` 💎\n` +
-        `• **Alliance:** \`${guildData.AllianceName || 'Aucune'}\` [${guildData.AllianceTag || '-'}]\n` +
-        `• **Serveur:** \`${REGION_NAMES[config.serverConnection] || config.serverConnection}\``
-      )
+      .setDescription(`Mise à jour en temps réel des statistiques globales de la guilde.`)
       .setColor(0xc9a14a) // Gold
+      .setImage('attachment://guild-stats.png')
       .setFooter({ text: 'Actualisé automatiquement toutes les minutes' })
       .setTimestamp()
 
     if (config.statsMessageId) {
       const msg = await channel.messages.fetch(config.statsMessageId).catch(() => null)
       if (msg) {
-        await msg.edit({ embeds: [embed] }).catch(() => null)
+        await msg.edit({ embeds: [embed], files: [file] }).catch(() => null)
         return
       }
     }
 
     // Send new message and save its ID
-    const newMsg = await channel.send({ embeds: [embed] }).catch(() => null)
+    const newMsg = await channel.send({ embeds: [embed], files: [file] }).catch(() => null)
     if (newMsg) {
       await prisma.discordGuildConfig.update({
         where: { id: config.id },
@@ -1111,14 +1322,34 @@ async function runServerStatusSync(config: any) {
 
     const { file, embed } = await generateServerStatusImageAndEmbed(config.serverStatusRegion)
 
-    // For server status, let's keep a simple dashboard message structure
+    if (config.serverStatusMessageId) {
+      const msg = await channel.messages.fetch(config.serverStatusMessageId).catch(() => null)
+      if (msg) {
+        await msg.edit({ embeds: [embed], files: [file] }).catch(() => null)
+        return
+      }
+    }
+
+    // Fallback: search recent messages to prevent duplicate postings if the ID was not yet recorded in DB
     const recentMsgs = await channel.messages.fetch({ limit: 10 }).catch(() => [])
     const botStatusMsg = Array.from(recentMsgs.values()).find((m: any) => m.author.id === client.user?.id && m.embeds[0]?.title?.includes('Statut des Serveurs')) as any
 
     if (botStatusMsg) {
       await botStatusMsg.edit({ embeds: [embed], files: [file] }).catch(() => null)
-    } else {
-      await channel.send({ embeds: [embed], files: [file] }).catch(() => null)
+      await prisma.discordGuildConfig.update({
+        where: { id: config.id },
+        data: { serverStatusMessageId: botStatusMsg.id },
+      })
+      return
+    }
+
+    // Send new message and save its ID
+    const newMsg = await channel.send({ embeds: [embed], files: [file] }).catch(() => null)
+    if (newMsg) {
+      await prisma.discordGuildConfig.update({
+        where: { id: config.id },
+        data: { serverStatusMessageId: newMsg.id },
+      })
     }
   } catch (err) {
     console.error(`[Discord Bot] Error syncing server status:`, err)

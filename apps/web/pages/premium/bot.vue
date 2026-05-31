@@ -58,50 +58,52 @@
         </div>
         
         <div class="sn-links p-2 space-y-1">
-          <!-- Active Configs -->
-          <div v-if="configs.length > 0">
-            <div class="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest px-3 py-1 mt-1 mb-1">Bots Actifs</div>
+          <!-- Installed Guilds -->
+          <div v-if="installedGuilds.length > 0">
+            <div class="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest px-3 py-1 mt-1 mb-1">Serveurs Connectés</div>
             <button
-              v-for="config in configs"
-              :key="config.id"
-              :class="['sn-link w-full text-left flex items-center justify-between', selectedConfig?.id === config.id && 'active']"
-              @click="selectConfig(config)"
+              v-for="guild in installedGuilds"
+              :key="guild.id"
+              :class="['sn-link w-full text-left flex items-center justify-between', form.id === guild.id && 'active']"
+              @click="selectActiveGuild(guild)"
             >
               <span class="flex items-center gap-2 truncate">
                 <span class="guild-avatar-placeholder">🤖</span>
-                <span class="truncate">{{ config.name }}</span>
+                <span class="truncate">{{ guild.name }}</span>
               </span>
+              <span v-if="hasSavedConfig(guild.id)" class="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 shrink-0">Actif</span>
+              <span v-else class="text-[9px] text-amber-500 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20 shrink-0">À configurer</span>
             </button>
           </div>
 
-          <!-- Unconfigured Guilds retrieved from OAuth -->
-          <div v-if="unconfiguredGuilds.length > 0">
-            <div class="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest px-3 py-1 mt-3 mb-1">Mes Serveurs Discord</div>
+          <!-- Uninstalled Guilds -->
+          <div v-if="uninstalledGuilds.length > 0">
+            <div class="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest px-3 py-1 mt-3 mb-1">Serveurs Disponibles</div>
             <button
-              v-for="guild in unconfiguredGuilds"
+              v-for="guild in uninstalledGuilds"
               :key="guild.id"
-              :class="['sn-link w-full text-left flex items-center justify-between opacity-80 hover:opacity-100', selectedConfig?.id === guild.id && 'active']"
-              @click="selectGuild(guild)"
+              :class="['sn-link w-full text-left flex items-center justify-between opacity-80 hover:opacity-100', form.id === guild.id && 'active']"
+              @click="selectInactiveGuild(guild)"
             >
               <span class="flex items-center gap-2 truncate text-gray-300">
                 <span class="guild-avatar-placeholder">🛡️</span>
                 <span class="truncate">{{ guild.name }}</span>
               </span>
-              <span class="text-[9px] text-amber-500 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/20 shrink-0">Lier</span>
+              <span class="text-[9px] text-amber-500 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20 shrink-0">Installer</span>
             </button>
           </div>
         </div>
       </nav>
 
       <!-- Main Config Panel -->
-      <div class="settings-content">
+      <div class="settings-content animate-fade-in">
         <div class="panel settings-panel">
-          <div class="sp-head flex items-center justify-between">
-            <span>{{ selectedConfig?.id ? `Configuration : ${form.name}` : 'Sélectionnez un serveur Discord pour configurer son Bot' }}</span>
+          <div class="sp-head flex items-center justify-between bg-surface-950 px-4 py-3 border-b border-surface-700/30">
+            <span>{{ form.id ? `Configuration : ${form.name}` : 'Sélectionnez un serveur Discord pour configurer son Bot' }}</span>
             <button
-              v-if="selectedConfig?.id"
+              v-if="form.id && isBotInstalledOnSelected && hasSavedConfig(form.id)"
               class="ds-btn ghost danger sm hover:bg-red-500/10 hover:text-red-400"
-              @click="deleteConfig(selectedConfig.id)"
+              @click="deleteConfig(form.id)"
             >
               Déconnecter
             </button>
@@ -113,6 +115,26 @@
             <p class="text-sm">Veuillez sélectionner l'un de vos serveurs Discord dans le menu de gauche pour démarrer la configuration.</p>
           </div>
 
+          <!-- Hero Panel when the bot is not installed on the selected server -->
+          <div v-else-if="!isBotInstalledOnSelected" class="p-16 text-center space-y-6 max-w-xl mx-auto animate-scale-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 text-3xl">
+              🤖
+            </div>
+            <div class="space-y-2">
+              <h2 class="text-xl font-bold text-white">Installer Albion SilverMind sur {{ form.name }}</h2>
+              <p class="text-sm text-gray-400 leading-relaxed">
+                Le bot n'est pas encore présent sur votre serveur Discord. Pour activer et configurer les modules d'alertes de profit, de killboard et de statistiques, vous devez d'abord inviter le bot.
+              </p>
+            </div>
+            <div class="pt-4 flex justify-center gap-3">
+              <a :href="specificInviteLink" target="_blank" class="ds-btn primary md inline-flex items-center gap-2">
+                <span>Inviter le Bot</span>
+                <span>🔗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Active Form when the bot is installed -->
           <div v-else class="sp-body sp-rows">
             <!-- Tabs inside panel body to clean up form -->
             <div class="flex border-b border-surface-700/30 mb-6 gap-2">
@@ -158,30 +180,65 @@
 
               <div class="sp-row">
                 <div class="sp-row-info">
-                  <div class="sp-row-label">ID de Guilde Albion</div>
-                  <div class="sp-row-sub">L'ID technique de votre guilde en jeu pour synchroniser le killboard et les stats.</div>
+                  <div class="sp-row-label">Guilde Albion</div>
+                  <div class="sp-row-sub">Recherchez et sélectionnez votre guilde Albion en jeu pour synchroniser le killboard et les stats.</div>
                 </div>
-                <input
-                  v-model="form.guildId"
-                  type="text"
-                  class="ds-input"
-                  style="width: 280px;"
-                  placeholder="Ex: d1A2f... ou nom exact"
-                />
+                <div class="relative animate-fade-in" style="width: 280px;">
+                  <div class="ps-input-wrap">
+                    <svg class="ps-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input
+                      v-model="searchQuery"
+                      class="ds-input ps-input"
+                      style="width: 100%; padding-left: 36px;"
+                      type="text"
+                      placeholder="Rechercher une guilde…"
+                      autocomplete="off"
+                      @focus="searchIsOpen = true"
+                      @blur="onBlurSearch"
+                    />
+                    <button v-if="searchQuery" class="ps-clear" @mousedown.prevent="clearSearch" type="button">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+
+                  <div v-if="searchIsOpen && (searchResults.length > 0 || searchSearching || searchQuery.length >= 2)" class="ps-dropdown">
+                    <div v-if="searchSearching" class="ps-loading t-dim">Recherche…</div>
+                    <template v-else-if="searchResults.length > 0">
+                      <div class="ps-section">
+                        <button
+                          v-for="g in searchResults"
+                          :key="g.Id"
+                          class="ps-item"
+                          type="button"
+                          @mousedown.prevent="selectSearchGuild(g)"
+                        >
+                          <span class="ps-avatar guild">G</span>
+                          <div class="flex flex-col text-left">
+                            <span class="ps-item-name">{{ g.Name }}</span>
+                            <span class="text-[10px] text-gray-500 font-mono leading-none mt-0.5">{{ g.Id }}</span>
+                          </div>
+                        </button>
+                      </div>
+                    </template>
+                    <div v-else-if="searchQuery.length >= 2 && !searchSearching" class="ps-empty t-dim">
+                      Aucun résultat pour "{{ searchQuery }}"
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div class="sp-row">
+              <!-- Selected guild badge display -->
+              <div v-if="form.guildId" class="sp-row pt-2 border-t border-dashed border-border-divider animate-fade-in">
                 <div class="sp-row-info">
-                  <div class="sp-row-label">Nom de Guilde Albion</div>
-                  <div class="sp-row-sub">Le nom affiché en jeu de votre guilde.</div>
+                  <div class="sp-row-label">Guilde Sélectionnée</div>
+                  <div class="sp-row-sub">Détails de la guilde active synchronisée.</div>
                 </div>
-                <input
-                  v-model="form.guildName"
-                  type="text"
-                  class="ds-input"
-                  style="width: 280px;"
-                  placeholder="Ex: La confrerie"
-                />
+                <div class="flex flex-col items-end gap-1" style="width: 280px;">
+                  <span class="text-sm font-semibold text-gold">{{ form.guildName }}</span>
+                  <code class="text-[11px] bg-surface-800 px-2 py-0.5 rounded text-gray-400 font-mono">{{ form.guildId }}</code>
+                </div>
               </div>
 
               <div class="sp-row">
@@ -210,18 +267,22 @@
                 </label>
               </div>
 
-              <div v-if="form.killboardEnabled" class="sp-row">
+              <div v-if="form.killboardEnabled" class="sp-row animate-fade-in">
                 <div class="sp-row-info">
                   <div class="sp-row-label">Canal Discord pour le Killboard</div>
                   <div class="sp-row-sub">L'ID du salon textuel où publier les rapports de combats.</div>
                 </div>
-                <input
-                  v-model="form.killboardChannelId"
-                  type="text"
-                  class="ds-input"
-                  style="width: 280px;"
-                  placeholder="Ex: 987654321098765432"
-                />
+                <div class="flex gap-2" style="width: 280px;">
+                  <input
+                    v-model="form.killboardChannelId"
+                    type="text"
+                    class="ds-input flex-1"
+                    placeholder="Ex: 987654321098765432"
+                  />
+                  <button class="ds-btn border border-border-divider px-3 flex items-center justify-center hover:bg-bg-4" type="button" @click="openChannelSelector('killboardChannelId', 'Sélectionner le salon Killboard')" title="Sélectionner le salon">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -239,18 +300,22 @@
               </div>
 
               <template v-if="form.statsEnabled">
-                <div class="sp-row">
+                <div class="sp-row animate-fade-in">
                   <div class="sp-row-info">
                     <div class="sp-row-label">Canal Discord pour les statistiques</div>
                     <div class="sp-row-sub">L'ID du salon textuel où le bot enverra et modifiera le message de statistiques.</div>
                   </div>
-                  <input
-                    v-model="form.statsChannelId"
-                    type="text"
-                    class="ds-input"
-                    style="width: 280px;"
-                    placeholder="Ex: 987654321098765432"
-                  />
+                  <div class="flex gap-2" style="width: 280px;">
+                    <input
+                      v-model="form.statsChannelId"
+                      type="text"
+                      class="ds-input flex-1"
+                      placeholder="Ex: 987654321098765432"
+                    />
+                    <button class="ds-btn border border-border-divider px-3 flex items-center justify-center hover:bg-bg-4" type="button" @click="openChannelSelector('statsChannelId', 'Sélectionner le salon Stats')" title="Sélectionner le salon">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </button>
+                  </div>
                 </div>
 
                 <div v-if="form.statsMessageId" class="sp-row">
@@ -280,18 +345,33 @@
               </div>
 
               <template v-if="form.serverStatusEnabled">
-                <div class="sp-row">
+                <div class="sp-row animate-fade-in">
                   <div class="sp-row-info">
                     <div class="sp-row-label">Canal Discord pour le statut serveur</div>
                     <div class="sp-row-sub">Salon textuel pour héberger le tableau d'état des serveurs.</div>
                   </div>
-                  <input
-                    v-model="form.serverStatusChannelId"
-                    type="text"
-                    class="ds-input"
-                    style="width: 280px;"
-                    placeholder="Ex: 987654321098765432"
-                  />
+                  <div class="flex gap-2" style="width: 280px;">
+                    <input
+                      v-model="form.serverStatusChannelId"
+                      type="text"
+                      class="ds-input flex-1"
+                      placeholder="Ex: 987654321098765432"
+                    />
+                    <button class="ds-btn border border-border-divider px-3 flex items-center justify-center hover:bg-bg-4" type="button" @click="openChannelSelector('serverStatusChannelId', 'Sélectionner le salon Statut')" title="Sélectionner le salon">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="form.serverStatusMessageId" class="sp-row">
+                  <div class="sp-row-info">
+                    <div class="sp-row-label">Identifiant du Message Actif</div>
+                    <div class="sp-row-sub">ID du message actuellement mis à jour. Effacer ce champ permet au bot de créer un nouveau message.</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <code class="text-xs bg-surface-800 px-2 py-1 rounded">{{ form.serverStatusMessageId }}</code>
+                    <button class="text-xs text-red-400 underline hover:text-red-300" @click="form.serverStatusMessageId = null">Réinitialiser</button>
+                  </div>
                 </div>
 
                 <div class="sp-row">
@@ -323,18 +403,22 @@
               </div>
 
               <template v-if="form.profitAlertsEnabled">
-                <div class="sp-row">
+                <div class="sp-row animate-fade-in">
                   <div class="sp-row-info">
                     <div class="sp-row-label">Canal Discord pour les alertes</div>
                     <div class="sp-row-sub">Salon textuel où le bot publiera les opportunités économiques.</div>
                   </div>
-                  <input
-                    v-model="form.profitAlertsChannelId"
-                    type="text"
-                    class="ds-input"
-                    style="width: 280px;"
-                    placeholder="Ex: 987654321098765432"
-                  />
+                  <div class="flex gap-2" style="width: 280px;">
+                    <input
+                      v-model="form.profitAlertsChannelId"
+                      type="text"
+                      class="ds-input flex-1"
+                      placeholder="Ex: 987654321098765432"
+                    />
+                    <button class="ds-btn border border-border-divider px-3 flex items-center justify-center hover:bg-bg-4" type="button" @click="openChannelSelector('profitAlertsChannelId', 'Sélectionner le salon Alertes')" title="Sélectionner le salon">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="sp-row">
@@ -368,18 +452,22 @@
               </div>
 
               <template v-if="form.dailyEventEnabled">
-                <div class="sp-row">
+                <div class="sp-row animate-fade-in">
                   <div class="sp-row-info">
                     <div class="sp-row-label">Canal Discord pour les annonces</div>
                     <div class="sp-row-sub">Salon textuel où le bot publiera la mise à jour de l'événement.</div>
                   </div>
-                  <input
-                    v-model="form.dailyEventChannelId"
-                    type="text"
-                    class="ds-input"
-                    style="width: 280px;"
-                    placeholder="Ex: 987654321098765432"
-                  />
+                  <div class="flex gap-2" style="width: 280px;">
+                    <input
+                      v-model="form.dailyEventChannelId"
+                      type="text"
+                      class="ds-input flex-1"
+                      placeholder="Ex: 987654321098765432"
+                    />
+                    <button class="ds-btn border border-border-divider px-3 flex items-center justify-center hover:bg-bg-4" type="button" @click="openChannelSelector('dailyEventChannelId', 'Sélectionner le salon Annonces')" title="Sélectionner le salon">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="sp-row flex-col items-start gap-3">
@@ -439,10 +527,77 @@
       </div>
     </div>
   </div>
+  <!-- Channel Selector Modal -->
+  <Teleport to="body">
+    <Transition name="confirm-fade">
+      <div v-if="channelModalOpen" class="confirm-overlay" @click.self="channelModalOpen = false">
+        <div class="confirm-modal channel-selector-modal animate-scale-in" role="dialog" aria-modal="true">
+          <div class="confirm-head">
+            <div>
+              <p class="confirm-eyebrow">Discord Bot</p>
+              <h3 class="confirm-title">{{ channelModalTitle }}</h3>
+            </div>
+            <button class="confirm-close" @click="channelModalOpen = false" type="button">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div class="my-4">
+            <div class="ps-input-wrap mb-3">
+              <svg class="ps-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                v-model="channelsSearchQuery"
+                class="ds-input ps-input"
+                style="width: 100%; padding-left: 36px;"
+                type="text"
+                placeholder="Filtrer les salons textuels…"
+                autocomplete="off"
+              />
+              <button v-if="channelsSearchQuery" class="ps-clear" @click="channelsSearchQuery = ''" type="button">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <div v-if="channelsLoading" class="flex flex-col items-center justify-center py-8 t-dim text-sm">
+              <span class="animate-pulse">Chargement des salons Discord…</span>
+            </div>
+
+            <div v-else-if="filteredChannels.length === 0" class="py-8 text-center t-dim text-sm">
+              Aucun salon textuel trouvé
+            </div>
+
+            <div v-else class="channel-list scrollable">
+              <button
+                v-for="c in filteredChannels"
+                :key="c.id"
+                class="channel-item"
+                type="button"
+                @click="selectChannel(c)"
+              >
+                <span class="channel-hashtag">#</span>
+                <div class="flex flex-col text-left">
+                  <span class="channel-name">{{ c.name }}</span>
+                  <span class="channel-id">{{ c.id }}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="confirm-actions">
+            <button class="ds-btn" @click="channelModalOpen = false" type="button">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const auth = useAuth()
 
@@ -469,6 +624,7 @@ interface DiscordGuildConfig {
   statsMessageId?: string | null
   serverStatusEnabled: boolean
   serverStatusChannelId?: string | null
+  serverStatusMessageId?: string | null
   serverStatusRegion: string
   profitAlertsEnabled: boolean
   profitAlertsChannelId?: string | null
@@ -500,6 +656,116 @@ const statusMessage = ref('')
 const isError = ref(false)
 
 const activeTab = ref('general')
+
+const searchQuery = ref('')
+const searchResults = ref<any[]>([])
+const searchSearching = ref(false)
+const searchIsOpen = ref(false)
+let debounceTimeout: any = null
+let ignoreSearchWatch = false
+
+function triggerSearch() {
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+  if (searchQuery.value.length < 2) {
+    searchResults.value = []
+    return
+  }
+
+  debounceTimeout = setTimeout(async () => {
+    searchSearching.value = true
+    try {
+      const res = await $fetch<any>('/api/v1/pvp/search', {
+        query: { q: searchQuery.value },
+      })
+      searchResults.value = res.data?.guilds || []
+    } catch (err) {
+      console.error('Failed to search guilds:', err)
+      searchResults.value = []
+    } finally {
+      searchSearching.value = false
+    }
+  }, 300)
+}
+
+watch(searchQuery, () => {
+  if (ignoreSearchWatch) return
+  triggerSearch()
+})
+
+function selectSearchGuild(g: any) {
+  ignoreSearchWatch = true
+  form.value.guildId = g.Id
+  form.value.guildName = g.Name
+  searchQuery.value = g.Name
+  searchIsOpen.value = false
+  setTimeout(() => {
+    ignoreSearchWatch = false
+  }, 100)
+}
+
+function clearSearch() {
+  searchQuery.value = ''
+  searchResults.value = []
+  form.value.guildId = ''
+  form.value.guildName = ''
+}
+
+function onBlurSearch() {
+  setTimeout(() => {
+    searchIsOpen.value = false
+  }, 150)
+}
+
+const channelModalOpen = ref(false)
+const channelModalField = ref<'killboardChannelId' | 'statsChannelId' | 'serverStatusChannelId' | 'profitAlertsChannelId' | 'dailyEventChannelId' | null>(null)
+const channelModalTitle = ref('')
+const discordChannels = ref<any[]>([])
+const channelsLoading = ref(false)
+const channelsSearchQuery = ref('')
+
+async function openChannelSelector(field: 'killboardChannelId' | 'statsChannelId' | 'serverStatusChannelId' | 'profitAlertsChannelId' | 'dailyEventChannelId', title: string) {
+  channelModalField.value = field
+  channelModalTitle.value = title
+  channelsSearchQuery.value = ''
+  channelModalOpen.value = true
+  
+  if (discordChannels.value.length === 0) {
+    channelsLoading.value = true
+    try {
+      const res = await $fetch<any>('/api/v1/premium/bot/channels', {
+        query: { guildId: form.value.id },
+      })
+      discordChannels.value = res.data || []
+    } catch (err) {
+      console.error('Failed to load channels:', err)
+      discordChannels.value = []
+    } finally {
+      channelsLoading.value = false
+    }
+  }
+}
+
+const filteredChannels = computed(() => {
+  if (!channelsSearchQuery.value) return discordChannels.value
+  const q = channelsSearchQuery.value.toLowerCase()
+  return discordChannels.value.filter((c) => c.name.toLowerCase().includes(q) || c.id.includes(q))
+})
+
+function selectChannel(c: any) {
+  if (channelModalField.value) {
+    form.value[channelModalField.value] = c.id
+  }
+  channelModalOpen.value = false
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && channelModalOpen.value) {
+    channelModalOpen.value = false
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 const tabs = [
   { id: 'general', label: 'Général' },
   { id: 'killboard', label: 'Killboard' },
@@ -524,6 +790,7 @@ const form = ref<Partial<DiscordGuildConfig>>({
   statsMessageId: null,
   serverStatusEnabled: false,
   serverStatusChannelId: '',
+  serverStatusMessageId: null,
   serverStatusRegion: 'ALL',
   profitAlertsEnabled: false,
   profitAlertsChannelId: '',
@@ -544,10 +811,76 @@ const specificInviteLink = computed(() => {
   return `https://discord.com/api/oauth2/authorize?client_id=${clientId.value}&permissions=2147483648&scope=bot%20applications.commands&guild_id=${form.value.id}&disable_guild_select=true`
 })
 
-const unconfiguredGuilds = computed(() => {
-  const activeIds = new Set(configs.value.map(c => c.id))
-  return allGuilds.value.filter(g => !activeIds.has(g.id))
+const installedGuilds = computed(() => {
+  return allGuilds.value.filter(g => g.botAdded)
 })
+
+const uninstalledGuilds = computed(() => {
+  return allGuilds.value.filter(g => !g.botAdded)
+})
+
+const isBotInstalledOnSelected = computed(() => {
+  if (!form.value.id) return false
+  const match = allGuilds.value.find(g => g.id === form.value.id)
+  return match ? match.botAdded : false
+})
+
+function hasSavedConfig(guildId: string) {
+  return configs.value.some(c => c.id === guildId)
+}
+
+function selectActiveGuild(guild: DiscordGuildInfo) {
+  const saved = configs.value.find(c => c.id === guild.id)
+  if (saved) {
+    selectedConfig.value = saved
+    form.value = { ...saved }
+    searchQuery.value = saved.guildName || ''
+  } else {
+    selectedConfig.value = null
+    form.value = {
+      id: guild.id,
+      name: guild.name,
+      icon: guild.icon,
+      guildId: '',
+      guildName: '',
+      serverConnection: 'WEST',
+      killboardEnabled: false,
+      killboardChannelId: '',
+      statsEnabled: false,
+      statsChannelId: '',
+      statsMessageId: null,
+      serverStatusEnabled: false,
+      serverStatusChannelId: '',
+      serverStatusMessageId: null,
+      serverStatusRegion: 'ALL',
+      profitAlertsEnabled: false,
+      profitAlertsChannelId: '',
+      profitAlertsMinMargin: 10,
+      dailyEventEnabled: false,
+      dailyEventChannelId: '',
+      dailyEventText: '',
+      itemSearchEnabled: true,
+      craftingTreeEnabled: true,
+    }
+    searchQuery.value = ''
+  }
+  searchResults.value = []
+  discordChannels.value = []
+  activeTab.value = 'general'
+}
+
+function selectInactiveGuild(guild: DiscordGuildInfo) {
+  selectedConfig.value = null
+  form.value = {
+    id: guild.id,
+    name: guild.name,
+    icon: guild.icon,
+  }
+  searchQuery.value = ''
+  searchResults.value = []
+  discordChannels.value = []
+  activeTab.value = 'general'
+}
 
 async function loadGuildsAndConfigs() {
   loading.value = true
@@ -565,52 +898,17 @@ async function loadGuildsAndConfigs() {
     configs.value = resConfigs.data
     clientId.value = resConfigs.clientId
     
-    // Select first active configuration if available, otherwise stay clean
-    if (configs.value.length > 0) {
-      selectConfig(configs.value[0])
-    } else if (unconfiguredGuilds.value.length > 0) {
-      selectGuild(unconfiguredGuilds.value[0])
+    // Select first active/installed server, otherwise the first uninstalled server
+    if (installedGuilds.value.length > 0) {
+      selectActiveGuild(installedGuilds.value[0])
+    } else if (uninstalledGuilds.value.length > 0) {
+      selectInactiveGuild(uninstalledGuilds.value[0])
     }
   } catch (err) {
     showStatus('Impossible de charger vos données Discord.', true)
   } finally {
     loading.value = false
   }
-}
-
-function selectConfig(config: DiscordGuildConfig) {
-  selectedConfig.value = config
-  form.value = { ...config }
-  activeTab.value = 'general'
-}
-
-function selectGuild(guild: DiscordGuildInfo) {
-  selectedConfig.value = null
-  form.value = {
-    id: guild.id,
-    name: guild.name,
-    icon: guild.icon,
-    guildId: '',
-    guildName: '',
-    serverConnection: 'WEST',
-    killboardEnabled: false,
-    killboardChannelId: '',
-    statsEnabled: false,
-    statsChannelId: '',
-    statsMessageId: null,
-    serverStatusEnabled: false,
-    serverStatusChannelId: '',
-    serverStatusRegion: 'ALL',
-    profitAlertsEnabled: false,
-    profitAlertsChannelId: '',
-    profitAlertsMinMargin: 10,
-    dailyEventEnabled: false,
-    dailyEventChannelId: '',
-    dailyEventText: '',
-    itemSearchEnabled: true,
-    craftingTreeEnabled: true,
-  }
-  activeTab.value = 'general'
 }
 
 async function saveConfig() {
@@ -631,7 +929,7 @@ async function saveConfig() {
     
     const saved = configs.value.find(c => c.id === res.data.id)
     if (saved) {
-      selectConfig(saved)
+      selectActiveGuild(saved)
     }
   } catch (err: any) {
     const msg = err.data?.message ?? "Erreur lors de l'enregistrement de la configuration."
@@ -652,8 +950,8 @@ async function deleteConfig(id: string) {
     showStatus('Configuration du serveur déconnectée.', false)
     await loadGuildsAndConfigs()
     
-    if (configs.value.length > 0) {
-      selectConfig(configs.value[0])
+    if (installedGuilds.value.length > 0) {
+      selectActiveGuild(installedGuilds.value[0])
     } else {
       selectedConfig.value = null
       form.value = {}
@@ -738,5 +1036,253 @@ function showStatus(msg: string, error: boolean = false) {
   background-color: rgba(239,68,68,0.1);
   border-color: rgba(239,68,68,0.3);
   color: #f87171;
+}
+
+/* Custom interactive search styles matching PVP Search Bar */
+.relative {
+  position: relative;
+}
+
+.ps-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ps-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-4);
+  pointer-events: none;
+}
+
+.ps-clear {
+  position: absolute;
+  right: 10px;
+  padding: 4px;
+  color: var(--text-4);
+  border-radius: 3px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ps-clear:hover { color: var(--text-1); }
+
+.ps-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-3);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.ps-loading,
+.ps-empty {
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+.ps-section { padding: 6px 0; }
+
+.ps-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  transition: background 0.1s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.ps-item:hover { background: var(--bg-4); }
+
+.ps-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(201,161,74,0.15);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ps-avatar.guild {
+  background: rgba(99,136,168,0.15);
+  color: var(--info);
+}
+
+.ps-item-name {
+  font-size: 13px;
+  color: var(--text-0);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Modal and list styles for Discord Channel Selector */
+.channel-selector-modal {
+  max-width: 480px;
+}
+
+.channel-list {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius);
+  background: var(--bg-3);
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+}
+
+.channel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.channel-item:hover {
+  background: var(--bg-4);
+}
+
+.channel-hashtag {
+  font-size: 18px;
+  color: var(--text-4);
+  font-weight: 500;
+  width: 18px;
+  text-align: center;
+}
+
+.channel-name {
+  font-size: 13px;
+  color: var(--text-0);
+  font-weight: 500;
+}
+
+.channel-id {
+  font-size: 10px;
+  color: var(--text-4);
+  font-family: var(--font-mono);
+}
+
+.my-4 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+/* Base Modal & Overlay Styles extracted from ConfirmationModal */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.confirm-modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+}
+
+.confirm-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirm-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: var(--font-display);
+}
+
+.confirm-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-0);
+}
+
+.confirm-close {
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-3);
+  transition: color 0.1s, background 0.1s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-close:hover {
+  color: var(--text-0);
+  background: var(--bg-3);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.confirm-fade-enter-active,
+.confirm-fade-leave-active {
+  transition: opacity 0.16s ease;
+}
+
+.confirm-fade-enter-active .confirm-modal,
+.confirm-fade-leave-active .confirm-modal {
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+.confirm-fade-enter-from,
+.confirm-fade-leave-to {
+  opacity: 0;
+}
+
+.confirm-fade-enter-from .confirm-modal,
+.confirm-fade-leave-to .confirm-modal {
+  transform: translateY(8px) scale(0.98);
+  opacity: 0;
 }
 </style>

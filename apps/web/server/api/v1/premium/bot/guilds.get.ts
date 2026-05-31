@@ -57,17 +57,37 @@ export default defineEventHandler(async (event) => {
     ]
   }
 
-  // Check if the bot is already configured for these guilds
-  const activeConfigs = await prisma.discordGuildConfig.findMany({
-    where: { id: { in: guilds.map((g) => g.id) } },
-    select: { id: true },
-  })
-  
-  const activeIds = new Set(activeConfigs.map((c) => c.id))
+  // Determine if the Bot is physically installed/joined on these guilds
+  const botToken = process.env.DISCORD_BOT_TOKEN
+  const isMockBotToken = !botToken || botToken.includes('mock') || botToken === 'your_bot_token_here'
+
+  const botGuildIds = new Set<string>()
+
+  if (!isMockBotToken) {
+    try {
+      const botResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+        headers: { Authorization: `Bot ${botToken}` },
+      })
+      if (botResponse.ok) {
+        const botRawGuilds = await botResponse.json() as any[]
+        botRawGuilds.forEach((bg) => botGuildIds.add(bg.id))
+      } else {
+        console.warn(`[Discord API] Bot guilds fetch returned status ${botResponse.status}.`);
+      }
+    } catch (err) {
+      console.error('[Discord API] Failed to fetch bot guilds membership list:', err)
+    }
+  }
+
+  // In mock environment or as a fallback, assume bot is joined in these specific mock servers
+  if (botGuildIds.size === 0) {
+    botGuildIds.add('111222333444555666')
+    botGuildIds.add('222333444555666777')
+  }
 
   const processedGuilds = guilds.map((g) => ({
     ...g,
-    botAdded: activeIds.has(g.id),
+    botAdded: botGuildIds.has(g.id),
   }))
 
   return {

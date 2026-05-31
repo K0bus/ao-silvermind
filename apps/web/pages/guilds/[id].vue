@@ -11,9 +11,9 @@
         </div>
         <h1 class="page-title">{{ guild.data.value.Name }}</h1>
         <div class="guild-meta">
-          <span v-if="guild.data.value.AllianceName" class="meta-tag">
+          <span v-if="guild.data.value.AllianceId" class="meta-tag">
             <NuxtLink :to="`/alliances/${guild.data.value.AllianceId}`" class="t-gold">
-              [{{ guild.data.value.AllianceTag ?? guild.data.value.AllianceName }}]
+              [{{ guild.data.value.AllianceTag || guild.data.value.AllianceName || 'Alliance' }}]
             </NuxtLink>
           </span>
           <span v-if="guild.data.value.MemberCount" class="meta-tag t-dim">
@@ -148,7 +148,7 @@
             <div class="panel-header"><h3>Alliance</h3></div>
             <div class="panel-body" style="padding:14px 16px">
               <NuxtLink :to="`/alliances/${guild.data.value.AllianceId}`" class="t-gold" style="font-weight:600">
-                {{ guild.data.value.AllianceName }}
+                {{ guild.data.value.AllianceName || guild.data.value.AllianceTag || 'Alliance' }}
               </NuxtLink>
             </div>
           </div>

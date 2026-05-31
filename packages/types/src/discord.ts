@@ -13,6 +13,7 @@ export interface DiscordGuildConfig {
   statsMessageId?: string | null
   serverStatusEnabled: boolean
   serverStatusChannelId?: string | null
+  serverStatusMessageId?: string | null
   serverStatusRegion: string
   profitAlertsEnabled: boolean
   profitAlertsChannelId?: string | null
