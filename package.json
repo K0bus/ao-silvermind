@@ -16,6 +16,7 @@
     "db:migrate": "turbo run db:migrate",
     "db:studio": "pnpm --filter @albion-tool/database studio",
     "db:seed": "pnpm --filter @albion-tool/database db:seed",
+    "db:reset-admin-password": "pnpm --filter @albion-tool/scripts run reset-admin-password",
     "import:full": "pnpm --filter @albion-tool/scripts run import:full",
     "import:market": "pnpm --filter @albion-tool/scripts run import:market",
     "import:icons": "pnpm --filter @albion-tool/scripts run import:icons",
