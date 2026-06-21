@@ -484,6 +484,67 @@
               </template>
             </div>
 
+            <!-- Tab: Top 5 Craft Embed -->
+            <div v-if="activeTab === 'profitEmbed'" class="space-y-6">
+              <div class="sp-row">
+                <div class="sp-row-info">
+                  <div class="sp-row-label">Activer l'embed du Top 5 rentabilité</div>
+                  <div class="sp-row-sub">Affiche un message permanent actualisé avec le top 5 des crafts les plus profitables de la ville configurée.</div>
+                </div>
+                <label class="switch-label">
+                  <input v-model="form.profitEmbedEnabled" type="checkbox" class="switch-input" />
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+
+              <template v-if="form.profitEmbedEnabled">
+                <div class="sp-row animate-fade-in">
+                  <div class="sp-row-info">
+                    <div class="sp-row-label">Canal Discord pour le Top 5</div>
+                    <div class="sp-row-sub">L'ID du salon textuel où le bot publiera et actualisera le message du Top 5.</div>
+                  </div>
+                  <div class="flex gap-2" style="width: 280px;">
+                    <input
+                      v-model="form.profitEmbedChannelId"
+                      type="text"
+                      class="ds-input flex-1"
+                      placeholder="Ex: 987654321098765432"
+                    />
+                    <button class="ds-btn border border-border-divider px-3 flex items-center justify-center hover:bg-bg-4" type="button" @click="openChannelSelector('profitEmbedChannelId', 'Sélectionner le salon Top 5')" title="Sélectionner le salon">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="form.profitEmbedMessageId" class="sp-row">
+                  <div class="sp-row-info">
+                    <div class="sp-row-label">Identifiant du Message Actif</div>
+                    <div class="sp-row-sub">ID du message actuellement mis à jour. Effacer ce champ permet au bot de créer un nouveau message.</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <code class="text-xs bg-surface-800 px-2 py-1 rounded">{{ form.profitEmbedMessageId }}</code>
+                    <button class="text-xs text-red-400 underline hover:text-red-300" @click="form.profitEmbedMessageId = null">Réinitialiser</button>
+                  </div>
+                </div>
+
+                <div class="sp-row">
+                  <div class="sp-row-info">
+                    <div class="sp-row-label">Ville pour le calcul</div>
+                    <div class="sp-row-sub">Choisissez la ville de référence pour le calcul de rentabilité.</div>
+                  </div>
+                  <select v-model="form.profitEmbedCityId" class="ds-input" style="width: 280px;">
+                    <option value="Caerleon">Caerleon</option>
+                    <option value="Bridgewatch">Bridgewatch</option>
+                    <option value="FortSterling">Fort Sterling</option>
+                    <option value="Lymhurst">Lymhurst</option>
+                    <option value="Martlock">Martlock</option>
+                    <option value="Thetford">Thetford</option>
+                    <option value="Brecilien">Brecilien</option>
+                  </select>
+                </div>
+              </template>
+            </div>
+
             <!-- Tab 6: Commands & Features -->
             <div v-if="activeTab === 'commands'" class="space-y-6">
               <div class="sp-row">
@@ -632,6 +693,10 @@ interface DiscordGuildConfig {
   dailyEventEnabled: boolean
   dailyEventChannelId?: string | null
   dailyEventText?: string | null
+  profitEmbedEnabled: boolean
+  profitEmbedChannelId?: string | null
+  profitEmbedMessageId?: string | null
+  profitEmbedCityId?: string | null
   itemSearchEnabled: boolean
   craftingTreeEnabled: boolean
 }
@@ -717,13 +782,13 @@ function onBlurSearch() {
 }
 
 const channelModalOpen = ref(false)
-const channelModalField = ref<'killboardChannelId' | 'statsChannelId' | 'serverStatusChannelId' | 'profitAlertsChannelId' | 'dailyEventChannelId' | null>(null)
+const channelModalField = ref<'killboardChannelId' | 'statsChannelId' | 'serverStatusChannelId' | 'profitAlertsChannelId' | 'dailyEventChannelId' | 'profitEmbedChannelId' | null>(null)
 const channelModalTitle = ref('')
 const discordChannels = ref<any[]>([])
 const channelsLoading = ref(false)
 const channelsSearchQuery = ref('')
 
-async function openChannelSelector(field: 'killboardChannelId' | 'statsChannelId' | 'serverStatusChannelId' | 'profitAlertsChannelId' | 'dailyEventChannelId', title: string) {
+async function openChannelSelector(field: 'killboardChannelId' | 'statsChannelId' | 'serverStatusChannelId' | 'profitAlertsChannelId' | 'dailyEventChannelId' | 'profitEmbedChannelId', title: string) {
   channelModalField.value = field
   channelModalTitle.value = title
   channelsSearchQuery.value = ''
@@ -773,6 +838,7 @@ const tabs = [
   { id: 'status', label: 'Statut Serveur' },
   { id: 'alerts', label: 'Alerte Profits' },
   { id: 'event', label: 'Événement' },
+  { id: 'profitEmbed', label: 'Top 5 Craft' },
   { id: 'commands', label: 'Commandes' },
 ]
 
@@ -798,6 +864,10 @@ const form = ref<Partial<DiscordGuildConfig>>({
   dailyEventEnabled: false,
   dailyEventChannelId: '',
   dailyEventText: '',
+  profitEmbedEnabled: false,
+  profitEmbedChannelId: '',
+  profitEmbedMessageId: null,
+  profitEmbedCityId: 'Caerleon',
   itemSearchEnabled: true,
   craftingTreeEnabled: true,
 })
@@ -859,6 +929,10 @@ function selectActiveGuild(guild: DiscordGuildInfo) {
       dailyEventEnabled: false,
       dailyEventChannelId: '',
       dailyEventText: '',
+      profitEmbedEnabled: false,
+      profitEmbedChannelId: '',
+      profitEmbedMessageId: null,
+      profitEmbedCityId: 'Caerleon',
       itemSearchEnabled: true,
       craftingTreeEnabled: true,
     }

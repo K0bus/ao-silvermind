@@ -30,6 +30,11 @@ const configSchema = z.object({
   dailyEventChannelId: z.string().optional().nullable(),
   dailyEventText: z.string().optional().nullable(),
   
+  profitEmbedEnabled: z.boolean().default(false),
+  profitEmbedChannelId: z.string().optional().nullable(),
+  profitEmbedMessageId: z.string().optional().nullable(),
+  profitEmbedCityId: z.string().optional().nullable(),
+  
   itemSearchEnabled: z.boolean().default(true),
   craftingTreeEnabled: z.boolean().default(true),
 })
@@ -84,6 +89,10 @@ export default defineEventHandler(async (event) => {
       dailyEventEnabled: data.dailyEventEnabled,
       dailyEventChannelId: data.dailyEventChannelId,
       dailyEventText: data.dailyEventText,
+      profitEmbedEnabled: data.profitEmbedEnabled,
+      profitEmbedChannelId: data.profitEmbedChannelId,
+      profitEmbedMessageId: data.profitEmbedMessageId,
+      profitEmbedCityId: data.profitEmbedCityId,
       itemSearchEnabled: data.itemSearchEnabled,
       craftingTreeEnabled: data.craftingTreeEnabled,
     },
@@ -110,6 +119,10 @@ export default defineEventHandler(async (event) => {
       dailyEventEnabled: data.dailyEventEnabled,
       dailyEventChannelId: data.dailyEventChannelId,
       dailyEventText: data.dailyEventText,
+      profitEmbedEnabled: data.profitEmbedEnabled,
+      profitEmbedChannelId: data.profitEmbedChannelId,
+      profitEmbedMessageId: data.profitEmbedMessageId,
+      profitEmbedCityId: data.profitEmbedCityId,
       itemSearchEnabled: data.itemSearchEnabled,
       craftingTreeEnabled: data.craftingTreeEnabled,
     },

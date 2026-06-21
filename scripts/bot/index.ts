@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, SlashCommandBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
 import { prisma } from '@albion-tool/database'
-import { getTopProfitHighlight } from '@albion-tool/market-engine'
+import { getTopProfitHighlight, computeTopProfitItemsForCity } from '@albion-tool/market-engine'
 import sharp from 'sharp'
 import fs from 'fs'
 import path from 'path'
@@ -952,6 +952,11 @@ async function startBackgroundLoops() {
             tasks.push(runDailyEventSync(config))
           }
 
+          // 6. Top 5 Craft Profit Embed updates
+          if (config.profitEmbedEnabled && config.profitEmbedChannelId && config.profitEmbedCityId) {
+            tasks.push(runProfitEmbedSync(config))
+          }
+
           await Promise.allSettled(tasks)
         })
       )
@@ -1436,6 +1441,70 @@ async function runDailyEventSync(config: any) {
     lastSentEventTextCache.set(cacheKey, config.dailyEventText)
   } catch (err) {
     console.error(`[Discord Bot] Error syncing daily event for guild ${config.name}:`, err)
+  }
+}
+
+// Helper: Run Top 5 Craft Profit Embed Sync
+async function runProfitEmbedSync(config: any) {
+  try {
+    const channel = await client.channels.fetch(config.profitEmbedChannelId).catch(() => null) as any
+    if (!channel) return
+
+    const items = await computeTopProfitItemsForCity(config.profitEmbedCityId)
+    if (!items || items.length === 0) return
+
+    const globalImageConfig = await prisma.systemConfig.findUnique({
+      where: { key: 'discord_embed_image_url' }
+    })
+    const globalImageUrl = globalImageConfig?.value as string | undefined
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 Albion Online - Top 5 Profits Craft à ${config.profitEmbedCityId}`)
+      .setDescription(`Les meilleures opportunités de craft direct estimées à **${config.profitEmbedCityId}** (taxe 4% et fee de station 999 incluses).`)
+      .setColor(0x10b981) // Emerald Green
+      .setTimestamp()
+
+    if (globalImageUrl) {
+      embed.setFooter({ text: 'Albion - SilverMind Bot', iconURL: globalImageUrl })
+    } else {
+      embed.setFooter({ text: 'Albion - SilverMind Bot' })
+    }
+
+    const topItem = items[0]
+    if (topItem) {
+      embed.setThumbnail(`https://render.albiononline.com/v1/item/${topItem.uniqueName}.png`)
+    }
+
+    items.forEach((item, index) => {
+      const enchantStr = item.enchantmentLevel > 0 ? `.${item.enchantmentLevel}` : ''
+      embed.addFields({
+        name: `${index + 1}. ${item.name} (T${item.tier}${enchantStr})`,
+        value: `• **Coût de Craft :** \`${item.netCost.toLocaleString()} silver\`\n` +
+               `• **Prix de Vente :** \`${item.sellRevenue.toLocaleString()} silver\`\n` +
+               `• **Profit Estimé :** \`+${item.profit.toLocaleString()} silver\`\n` +
+               `• **Marge de Profit :** \`${item.margin.toFixed(1)}%\` 🚀`,
+        inline: false
+      })
+    })
+
+    if (config.profitEmbedMessageId) {
+      const msg = await channel.messages.fetch(config.profitEmbedMessageId).catch(() => null)
+      if (msg) {
+        await msg.edit({ embeds: [embed] }).catch(() => null)
+        return
+      }
+    }
+
+    // Send new message and save its ID
+    const newMsg = await channel.send({ embeds: [embed] }).catch(() => null)
+    if (newMsg) {
+      await prisma.discordGuildConfig.update({
+        where: { id: config.id },
+        data: { profitEmbedMessageId: newMsg.id },
+      })
+    }
+  } catch (err) {
+    console.error(`[Discord Bot] Error syncing profit embed for guild ${config.name}:`, err)
   }
 }
 

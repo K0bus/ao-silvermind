@@ -214,3 +214,154 @@ export async function getTopProfitHighlight() {
     cost: top.bestCost
   }
 }
+
+export interface CityProfitItem {
+  uniqueName: string
+  name: string
+  tier: number
+  enchantmentLevel: number
+  iconUrl: string | null
+  netCost: number
+  sellRevenue: number
+  profit: number
+  margin: number
+}
+
+export async function computeTopProfitItemsForCity(locationId: string): Promise<CityProfitItem[]> {
+  const location = await prisma.location.findFirst({
+    where: {
+      OR: [
+        { id: locationId },
+        { name: { equals: locationId, mode: "insensitive" } }
+      ],
+      isActive: true
+    },
+    select: { id: true, name: true },
+  })
+
+  if (!location) return []
+
+  const rawItems = await prisma.item.findMany({
+    where: {
+      isCraftable: true,
+      craftingRecipe: { isNot: null },
+      shopCategory: { not: "artefacts" }
+    },
+    take: 1000,
+    orderBy: [{ tier: "desc" }, { enchantmentLevel: "asc" }, { id: "asc" }],
+    select: {
+      uniqueName: true,
+      tier: true,
+      enchantmentLevel: true,
+      iconUrl: true,
+      localizations: {
+        where: { locale: LOCALE },
+        select: { name: true },
+        take: 1,
+      },
+      craftingRecipe: {
+        select: {
+          resultCount: true,
+          silverCost: true,
+          ingredients: {
+            select: {
+              quantity: true,
+              maxReturnRate: true,
+              item: {
+                select: {
+                  resolvedPrices: {
+                    where: { locationId: location.id, quality: 1 },
+                    select: { sellPrice: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      resolvedPrices: {
+        where: { locationId: location.id, quality: 1 },
+        select: { sellPrice: true },
+      },
+      cityBonuses: {
+        where: { locationId: location.id },
+        select: { craftingBonus: true },
+      },
+    },
+  })
+
+  const pairs = [
+    ...new Map(
+      rawItems.map((i) => [
+        `${i.tier}:${i.enchantmentLevel}`,
+        { tier: i.tier, enchantmentLevel: i.enchantmentLevel },
+      ])
+    ).values(),
+  ]
+  const returnRates =
+    pairs.length > 0
+      ? await prisma.returnRate.findMany({ where: { OR: pairs } })
+      : []
+  const rrMap = new Map(
+    returnRates.map((r) => [`${r.tier}:${r.enchantmentLevel}`, r])
+  )
+
+  const results: CityProfitItem[] = []
+
+  for (const item of rawItems) {
+    const rr = rrMap.get(`${item.tier}:${item.enchantmentLevel}`)
+    const baseRR = rr?.baseReturnRate ?? 0
+    const name = item.localizations[0]?.name ?? item.uniqueName
+
+    let rawCost = 0
+    let savings = 0
+    let skip = false
+
+    if (!item.craftingRecipe || !item.craftingRecipe.ingredients) continue
+
+    for (const ing of item.craftingRecipe.ingredients) {
+      const price = ing.item.resolvedPrices[0]?.sellPrice
+      if (!price || price === 0) {
+        skip = true
+        break
+      }
+      const capRR =
+        ing.maxReturnRate !== null
+          ? Math.min(baseRR, ing.maxReturnRate)
+          : baseRR
+      rawCost += ing.quantity * price
+      savings += ing.quantity * price * capRR
+    }
+    if (skip) continue
+
+    const nutritionRequired = item.craftingRecipe.silverCost ?? 0
+    const netMat = rawCost - savings
+    const stationFee = (nutritionRequired / 100) * SILVER_PER_100_NUTRITION
+    const netCost = netMat + stationFee
+
+    const sellPrice = item.resolvedPrices[0]?.sellPrice
+    if (!sellPrice || sellPrice === 0) continue
+
+    const cityBonus = item.cityBonuses[0]?.craftingBonus ?? 0
+    const effectiveOutput = (item.craftingRecipe.resultCount ?? 1) * (1 + cityBonus / 100)
+    const revenue = sellPrice * effectiveOutput
+    const profit = revenue - revenue * TAX_RATE - netCost
+    const margin = netCost > 0 ? (profit / netCost) * 100 : 0
+
+    results.push({
+      uniqueName: item.uniqueName,
+      name,
+      tier: item.tier,
+      enchantmentLevel: item.enchantmentLevel,
+      iconUrl: item.iconUrl,
+      netCost: Math.round(netCost),
+      sellRevenue: Math.round(revenue),
+      profit: Math.round(profit),
+      margin: Math.round(margin * 10) / 10,
+    })
+  }
+
+  // Sort by profit descending
+  results.sort((a, b) => b.profit - a.profit)
+  return results.slice(0, 5)
+}

@@ -21,6 +21,10 @@ export interface DiscordGuildConfig {
   dailyEventEnabled: boolean
   dailyEventChannelId?: string | null
   dailyEventText?: string | null
+  profitEmbedEnabled: boolean
+  profitEmbedChannelId?: string | null
+  profitEmbedMessageId?: string | null
+  profitEmbedCityId?: string | null
   itemSearchEnabled: boolean
   craftingTreeEnabled: boolean
   createdAt: string | Date

@@ -1200,6 +1200,11 @@ model DiscordGuildConfig {
   dailyEventChannelId     String?
   dailyEventText          String?
   
+  profitEmbedEnabled      Boolean  @default(false)
+  profitEmbedChannelId    String?
+  profitEmbedMessageId    String?
+  profitEmbedCityId       String?
+  
   itemSearchEnabled       Boolean  @default(true)
   craftingTreeEnabled     Boolean  @default(true)
   
