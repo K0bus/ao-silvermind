@@ -58,6 +58,13 @@
         </div>
         
         <div class="sn-links p-2 space-y-1">
+          <!-- Empty State -->
+          <div v-if="installedGuilds.length === 0 && uninstalledGuilds.length === 0" class="p-4 text-center text-xs text-gray-500 space-y-2">
+            <span class="text-xl block">⚠️</span>
+            <p>Aucun serveur Discord éligible trouvé.</p>
+            <p class="text-[10px] text-gray-400">Pour configurer un bot, vous devez posséder les droits d'Administrateur ou la permission "Gérer le serveur" sur vos serveurs Discord.</p>
+          </div>
+
           <!-- Installed Guilds -->
           <div v-if="installedGuilds.length > 0">
             <div class="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest px-3 py-1 mt-1 mb-1">Serveurs Connectés</div>

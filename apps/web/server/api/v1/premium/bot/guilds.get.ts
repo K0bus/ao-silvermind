@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
   let guilds: any[] = []
 
   const isMockToken = dbUser.discordAccessToken.includes('mock')
+  const isProd = process.env.NODE_ENV === 'production'
 
   if (!isMockToken) {
     try {
@@ -42,14 +43,20 @@ export default defineEventHandler(async (event) => {
           name: g.name,
           icon: g.icon,
         }))
+      } else {
+        if (response.status === 401) {
+          throw createError({ statusCode: 401, statusMessage: 'Session Discord expirée. Veuillez vous reconnecter.' })
+        }
+        console.warn(`[Discord API] Guilds fetch returned status ${response.status}.`)
       }
-    } catch (err) {
-      console.warn('[Discord API] Failed to fetch guilds, falling back to mock:', err)
+    } catch (err: any) {
+      if (err.statusCode === 401) throw err
+      console.warn('[Discord API] Failed to fetch guilds:', err)
     }
   }
 
-  // If no guilds or in mock env, supply realistic mock data
-  if (guilds.length === 0) {
+  // If no guilds or in mock env, supply realistic mock data ONLY if in dev and using a mock token
+  if (guilds.length === 0 && isMockToken && !isProd) {
     guilds = [
       { id: '111222333444555666', name: '🛡️ SilverMind Alliance [ZvZ]' },
       { id: '222333444555666777', name: '💰 Lymhurst Merchants' },
@@ -72,15 +79,15 @@ export default defineEventHandler(async (event) => {
         const botRawGuilds = await botResponse.json() as any[]
         botRawGuilds.forEach((bg) => botGuildIds.add(bg.id))
       } else {
-        console.warn(`[Discord API] Bot guilds fetch returned status ${botResponse.status}.`);
+        console.warn(`[Discord API] Bot guilds fetch returned status ${botResponse.status}.`)
       }
     } catch (err) {
       console.error('[Discord API] Failed to fetch bot guilds membership list:', err)
     }
   }
 
-  // In mock environment or as a fallback, assume bot is joined in these specific mock servers
-  if (botGuildIds.size === 0) {
+  // In mock environment or as a fallback, assume bot is joined in these specific mock servers ONLY if in dev and using a mock token
+  if (botGuildIds.size === 0 && isMockBotToken && !isProd) {
     botGuildIds.add('111222333444555666')
     botGuildIds.add('222333444555666777')
   }
