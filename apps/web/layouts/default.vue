@@ -240,6 +240,7 @@
             <ul>
               <li><NuxtLink to="/tools/dungeon-payout"><div><div>Payout Donjon</div><div class="desc">Répartition équitable de butin</div></div></NuxtLink></li>
               <li><NuxtLink to="/crafting"><div><div>Liste de courses</div><div class="desc">Ressources de craft agrégées</div></div></NuxtLink></li>
+              <li><NuxtLink to="/premium/bot"><div><div>Bots Discord</div><div class="desc">Alertes, killboard et stats de guilde</div></div></NuxtLink></li>
             </ul>
           </div>
           <div class="mega-col">

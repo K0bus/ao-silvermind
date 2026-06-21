@@ -97,6 +97,14 @@
                 Optional image displayed at the bottom of all Discord notifications.
               </p>
             </div>
+
+            <!-- Discord Bot Page Link -->
+            <div class="mt-5 p-3 rounded bg-surface-800/40 border border-surface-700/30 text-xs text-gray-400 flex items-center justify-between">
+              <span>Looking to manage user Discord Bot integrations?</span>
+              <NuxtLink to="/admin/data/discord" class="text-primary-500 hover:text-primary-400 font-semibold transition-colors">
+                Go to Discord Bots →
+              </NuxtLink>
+            </div>
           </div>
         </div>
 

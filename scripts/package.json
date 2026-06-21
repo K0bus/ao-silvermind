@@ -13,6 +13,7 @@
     "worker:dev": "tsx watch worker/index.ts",
     "worker:prod": "tsx worker/index.ts",
     "bot": "tsx --env-file=../.env bot/index.ts",
+    "bot:prod": "tsx bot/index.ts",
     "reset-admin-password": "tsx --env-file=../.env db/reset-admin-password.ts"
   },
   "dependencies": {

@@ -123,7 +123,7 @@ services:
           memory: 512M
         reservations:
           memory: 256M
-    command: ["pnpm", "--filter", "@albion-tool/scripts", "run", "bot"]
+    command: ["pnpm", "--filter", "@albion-tool/scripts", "run", "bot:prod"]
 
   nginx:
     image: k0bus/albion-silvermind-nginx:${IMAGE_TAG:-latest}
